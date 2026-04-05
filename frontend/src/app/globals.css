@@ -1,6 +1,9 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #2563eb;
+  --color-secondary: #1e40af;
+}
 
 html {
   scroll-behavior: smooth;
@@ -15,9 +18,11 @@ body {
 }
 
 button {
-  @apply transition-colors duration-200;
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
 }
 
 input[type='file'] {
-  @apply cursor-pointer;
+  cursor: pointer;
 }

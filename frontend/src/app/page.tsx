@@ -2,12 +2,13 @@
 
 import { useState } from 'react';
 import ResumeUploader from '@/components/resume-uploader';
+import { Resume } from '@/types/resume';
 
 export default function Home() {
-  const [uploadedResumes, setUploadedResumes] = useState([]);
+  const [uploadedResumes, setUploadedResumes] = useState<Resume[]>([]);
 
-  const handleUploadComplete = (resumes: any[]) => {
-    setUploadedResumes([...uploadedResumes, ...resumes]);
+  const handleUploadComplete = (resumes: Resume[]) => {
+    setUploadedResumes((prev) => [...prev, ...resumes]);
   };
 
   return (

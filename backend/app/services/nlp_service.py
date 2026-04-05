@@ -48,9 +48,16 @@ class NLPService:
                     text += page.get_text()
                 doc.close()
             elif ext in ['doc', 'docx']:
-                # For complexity, we'd use python-docx or textract
-                # Simplified for now: return empty or search for basic strings
-                text = "DOCX extraction placeholder"
+                try:
+                    import docx
+                    doc = docx.Document(io.BytesIO(content))
+                    text = "\n".join([paragraph.text for paragraph in doc.paragraphs])
+                except ImportError:
+                    logger.warning("python-docx not found, falling back to placeholder")
+                    text = "DOCX extraction placeholder"
+                except Exception as e:
+                    logger.error(f"Error parsing DOCX: {e}")
+                    text = ""
             elif ext in ['csv']:
                 df = pd.read_csv(io.BytesIO(content))
                 text = df.to_string()

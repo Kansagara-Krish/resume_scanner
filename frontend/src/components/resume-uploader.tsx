@@ -2,9 +2,10 @@
 
 import { useState } from 'react';
 import { uploadResumes } from '@/lib/api';
+import { Resume } from '@/types/resume';
 
 interface ResumeUploaderProps {
-  onUploadComplete: (resumes: any[]) => void;
+  onUploadComplete: (resumes: Resume[]) => void;
 }
 
 export default function ResumeUploader({ onUploadComplete }: ResumeUploaderProps) {
