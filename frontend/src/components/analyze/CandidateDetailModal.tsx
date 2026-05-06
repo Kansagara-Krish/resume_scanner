@@ -360,7 +360,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
                     <div key={item.skill}>
                       <div className="mb-1.5 flex items-center justify-between text-sm">
                         <span className="font-medium uppercase tracking-wide text-[var(--app-text)]">{item.skill}</span>
-                        <span className="font-semibold text-[var(--app-muted)]">{item.is_na ? 'N/A' : `${Math.round(item.percentage)}%`}</span>
+                        <span className="font-semibold text-[var(--app-muted)]">{(item as any).is_na ? 'N/A' : `${Math.round(item.percentage)}%`}</span>
                       </div>
                       <div className="h-2.5 rounded-full bg-slate-200">
                         <div className={`h-2.5 rounded-full ${getBarColor(item.percentage)} ${getBarWidthClass(item.percentage)}`} />

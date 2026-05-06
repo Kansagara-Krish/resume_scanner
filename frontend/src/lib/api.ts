@@ -13,6 +13,7 @@ import {
   GmailFetchResponse,
   GoogleLoginPayload,
   ResumeUploadResponse,
+  User,
 } from '@/types/resume';
 import { clearStoredAuth, getStoredToken } from '@/lib/storage';
 

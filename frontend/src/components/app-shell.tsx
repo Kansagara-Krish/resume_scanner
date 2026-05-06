@@ -152,7 +152,7 @@ export default function AppShell({ children }: PropsWithChildren) {
 
     return currentUser.full_name
       .split(' ')
-      .map((part) => part.charAt(0).toUpperCase())
+      .map((part: string) => part.charAt(0).toUpperCase())
       .slice(0, 2)
       .join('');
   };

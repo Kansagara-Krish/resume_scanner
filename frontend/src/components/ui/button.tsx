@@ -12,6 +12,7 @@ const buttonVariants = cva(
         secondary: 'border border-[var(--app-border)] bg-[var(--app-surface-elevated)] text-[var(--app-text)] hover:bg-[var(--app-surface-soft)]',
         ghost: 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]',
         destructive: 'bg-[var(--app-danger)] text-white hover:opacity-95',
+        outline: 'border border-[var(--app-border)] bg-transparent text-[var(--app-text)] hover:bg-[var(--app-surface-soft)]',
       },
       size: {
         default: 'h-10 px-4 py-2',

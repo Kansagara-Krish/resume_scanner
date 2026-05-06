@@ -4,14 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import axios from 'axios';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 import { clearStoredAuth, getStoredToken, getStoredUser, setStoredToken, setStoredUser } from '@/lib/storage';
-
-export interface User {
-  id: string;
-  email: string;
-  full_name: string;
-  avatar_url?: string;
-  google_id?: string;
-}
+import type { User } from '@/types/resume';
 
 interface AuthContextType {
   user: User | null;

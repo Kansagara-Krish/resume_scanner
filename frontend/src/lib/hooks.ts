@@ -185,7 +185,7 @@ export const useAnalysisResults = (jobId?: string) => {
 export const useUploadResumes = () => {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: api.uploadResumes,
+    mutationFn: (files: File[]) => api.uploadResumes(files),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['resumes'] });
     },

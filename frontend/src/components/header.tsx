@@ -21,7 +21,7 @@ export function Header() {
                   {user.avatar_url && (
                     <img
                       src={user.avatar_url}
-                      alt={user.full_name}
+                      alt={user.full_name || 'User avatar'}
                       className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
                     />
                   )}

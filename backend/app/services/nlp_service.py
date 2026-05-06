@@ -297,3 +297,42 @@ class NLPService:
         {combined_text[:20000]}
         """
         return await self._call_ollama_json(prompt)
+
+    async def generate_chat_response(
+        self,
+        user_message: str,
+        conversation_history: List[str],
+        context_data: str = ""
+    ) -> str:
+        """Generate a conversational response using Ollama with conversation context"""
+        
+        history_text = "\n".join(conversation_history[-5:]) if conversation_history else ""
+        
+        prompt = f"""You are an AI HR assistant helping with candidate screening and recruitment questions. 
+Be professional, concise, and helpful.
+
+Conversation History:
+{history_text}
+
+Current Message: {user_message}
+
+{f"Context: {context_data}" if context_data else ""}
+
+Please provide a helpful, professional response."""
+        
+        try:
+            response = await self.client.chat(
+                model=self.model_name,
+                messages=[{'role': 'user', 'content': prompt}],
+                options={'temperature': 0.7}
+            )
+            
+            content = response.get('message', {}).get('content', '')
+            if not content:
+                logger.warning("Ollama returned empty response for chat")
+                return "I couldn't generate a response. Please try again."
+            
+            return content.strip()
+        except Exception as e:
+            logger.error(f"Chat response generation error: {e}")
+            return f"Error generating response: {str(e)}"
