@@ -33,8 +33,8 @@ async def upload_resume(
         
         parsed_profile = await nlp_service.extract_candidate_profile(content_text, file.filename or "uploaded_resume")
         
-        logger.info(f"Profile extracted for: {parsed_profile.get('full_name')}")
-
+        logger.info(f"Phase 5: Profile extracted for: {parsed_profile.get('full_name')}. Saving to database...")
+        
         resume = await db.resume.create(
             data={
                 "file_name": file.filename or "uploaded_resume",
@@ -43,6 +43,7 @@ async def upload_resume(
                 "uploaded_by": current_user.id,
             }
         )
+        logger.info(f"Phase 6: Resume saved successfully with ID: {resume.id}")
         
         return ResumeUploadResponse(
             filename=resume.file_name,

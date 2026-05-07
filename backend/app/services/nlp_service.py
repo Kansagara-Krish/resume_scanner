@@ -104,7 +104,12 @@ class NLPService:
                     model=self.model_name,
                     messages=[{'role': 'user', 'content': prompt}],
                     format='json',
-                    options={'temperature': 0}
+                    options={
+                        'temperature': 0,
+                        'num_ctx': 16384, # Sufficient for resumes
+                        'num_predict': 2048, # Limit output length for speed
+                        'top_p': 0.9,
+                    }
                 )
                 
                 content = response.get('message', {}).get('content', '')
@@ -116,15 +121,20 @@ class NLPService:
             except Exception as e:
                 logger.error(f"Ollama API error (Attempt {attempt+1}/{max_retries}): {str(e)}")
                 if attempt == max_retries - 1:
+                    logger.error("Phase Failed: Ollama call failed after maximum retries.")
                     return {}
+                logger.info(f"Retrying Ollama call in {2 ** attempt} seconds...")
                 await asyncio.sleep(2 ** attempt)
         return {}
 
     async def extract_candidate_profile(self, text: str, filename: str = "") -> Dict:
         """Exclusively Ollama-based profile extraction."""
+        logger.info(f"Phase 1: Starting profile extraction for {filename}")
         # Clean text: remove excessive whitespace and limit to a reasonable chunk
         # 30,000 characters is plenty for even long CVs.
         clean_text = re.sub(r'\s+', ' ', text).strip()
+        
+        logger.info(f"Phase 2: Preparing LLM prompt for profile extraction ({len(clean_text)} chars)")
         
         prompt = f"""
         Extract professional information from the following resume text.
@@ -148,11 +158,13 @@ class NLPService:
         - sgpa: float
         - internships: list of strings
 
-        Resume Text:
-        {clean_text[:30000]}
+        Resume Text (First 12,000 characters):
+        {clean_text[:12000]}
         """
         
+        logger.info("Phase 3: Calling Ollama API (this may take 1-2 minutes depending on hardware)...")
         extracted = await self._call_ollama_json(prompt)
+        logger.info("Phase 4: Parsing Ollama JSON response...")
         
         # Ensure all fields exist to avoid frontend crashes
         defaults = {
@@ -224,7 +236,10 @@ class NLPService:
         {resume_text[:20000]}
         """
         
+        logger.info(f"Analyzing candidate fit against JD ({len(resume_text)} chars resume, {len(job_description)} chars JD)")
+        logger.info("Calling Ollama for resume matching analysis...")
         analysis = await self._call_ollama_json(prompt)
+        logger.info("Analysis complete.")
         
         # Default structure if LLM fails
         if not analysis:

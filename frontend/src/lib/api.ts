@@ -27,7 +27,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 const getApiClient = () => {
   const client = axios.create({
     baseURL: API_BASE_URL,
-    timeout: 300000, // 5 minutes for AI processing
+    timeout: 600000, // 10 minutes for AI processing
   });
 
   client.interceptors.request.use((config) => {
@@ -105,19 +105,25 @@ const uploadSingleResume = async (file: File): Promise<ResumeUploadResponse> => 
 
 export const uploadResumes = async (
   files: File[],
-  options?: { onProgress?: (completed: number, total: number) => void }
+  options?: { 
+    onProgress?: (completed: number, total: number) => void;
+    onFileStart?: (filename: string, index: number) => void;
+  }
 ): Promise<ResumeUploadResponse[]> => {
   try {
     const results: ResumeUploadResponse[] = [];
     const total = files.length;
 
-    for (const file of files) {
+    // Process all files in parallel for maximum speed
+    const uploadPromises = files.map(async (file, i) => {
+      options?.onFileStart?.(file.name, i);
       const item = await uploadSingleResume(file);
       results.push(item);
       options?.onProgress?.(results.length, total);
-    }
+      return item;
+    });
 
-    return results;
+    return await Promise.all(uploadPromises);
   } catch (error) {
     throw new Error(getErrorMessage(error));
   }

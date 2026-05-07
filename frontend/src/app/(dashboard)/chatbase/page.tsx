@@ -279,6 +279,8 @@ export default function ChatbasePage() {
     success: 0,
     failed: 0,
     phase: 'idle' as 'idle' | 'uploading' | 'processing' | 'completed' | 'failed',
+    currentFile: '' as string,
+    percentage: 0 as number,
   });
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [showAllCandidates, setShowAllCandidates] = useState(false);
@@ -427,13 +429,38 @@ export default function ChatbasePage() {
     if (typeof window === 'undefined' || !storageReady) {
       return;
     }
-
     if (activeChatId) {
       window.localStorage.setItem(CHAT_ID_STORAGE_KEY, activeChatId);
     } else {
       window.localStorage.removeItem(CHAT_ID_STORAGE_KEY);
     }
   }, [activeChatId, storageReady]);
+
+  // Smooth progress increment for the processing phase
+  useEffect(() => {
+    if (!uploadMetrics.currentFile || uploadMetrics.phase !== 'uploading') return;
+    
+    const interval = setInterval(() => {
+      setUploadMetrics(prev => {
+        if (!prev.currentFile) return prev;
+        
+        const totalFiles = prev.total || 1;
+        const base = (prev.processed / totalFiles) * 100;
+        const max = ((prev.processed + 1) / totalFiles) * 100;
+        const current = prev.percentage;
+        
+        // Slow down as we reach the end of the current file's share
+        const increment = current < (base + (max - base) * 0.9) ? 0.8 : 0.1;
+        
+        if (current < max - 1) {
+          return { ...prev, percentage: Math.min(current + increment, max - 1) };
+        }
+        return prev;
+      });
+    }, 500);
+    
+    return () => clearInterval(interval);
+  }, [uploadMetrics.currentFile, uploadMetrics.phase]);
 
   const activeSession = useMemo(
     () => sessions.find((session) => session.id === activeChatId) || sessions[0],
@@ -599,6 +626,15 @@ export default function ChatbasePage() {
 
     try {
       const uploaded = await uploadResumes(selectedFiles, {
+        onFileStart: (filename, index) => {
+          setUploadMetrics(prev => ({
+            ...prev,
+            currentFile: filename,
+            phase: 'uploading',
+            // Reset percentage for each file but keep the base progress
+            percentage: (index / selectedFiles.length) * 100
+          }));
+        },
         onProgress: (completed, total) => {
           setUploadMetrics({
             total,
@@ -606,6 +642,8 @@ export default function ChatbasePage() {
             success: completed,
             failed: Math.max(0, total - completed),
             phase: 'uploading',
+            currentFile: '',
+            percentage: (completed / total) * 100
           });
         },
       });
@@ -1344,17 +1382,24 @@ export default function ChatbasePage() {
             <div className="w-full space-y-3">
               <div className="flex justify-between text-xs font-bold text-slate-600 uppercase tracking-widest">
                 <span>Progress</span>
-                <span>{Math.round((uploadMetrics.processed / (uploadMetrics.total || 1)) * 100)}%</span>
+                <span>{Math.round(uploadMetrics.percentage)}%</span>
               </div>
               <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
                 <div 
-                  className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 transition-all duration-500 rounded-full"
-                  style={{ width: `${(uploadMetrics.processed / (uploadMetrics.total || 1)) * 100}%` }}
+                  className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 transition-all duration-700 rounded-full"
+                  style={{ width: `${uploadMetrics.percentage}%` }}
                 ></div>
               </div>
-              <p className="text-sm font-semibold text-slate-700">
-                Processed {uploadMetrics.processed} of {uploadMetrics.total || selectedFiles.length} resumes
-              </p>
+              <div className="flex flex-col gap-1">
+                <p className="text-sm font-semibold text-slate-700">
+                  Processed {uploadMetrics.processed} of {uploadMetrics.total || selectedFiles.length} resumes
+                </p>
+                {uploadMetrics.currentFile && (
+                  <p className="text-xs text-indigo-500 animate-pulse truncate max-w-full">
+                    Current: {uploadMetrics.currentFile}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
