@@ -75,7 +75,7 @@ async def send_chat_message(
     current_user = Depends(get_current_user),
     db: Prisma = Depends(get_db)
 ):
-    """Send a message in a chat and get an AI response using Ollama"""
+    """Send a message in a chat and get an AI response."""
     try:
         # Verify chat ownership
         chat = await db.chat.find_unique(where={"id": chat_id})
@@ -103,7 +103,7 @@ async def send_chat_message(
             }
         )
         
-        # Generate response using Ollama
+        # Generate response using AI service
         try:
             response_text = await nlp_service.generate_chat_response(
                 user_message=request.message,
@@ -111,7 +111,7 @@ async def send_chat_message(
                 context_data=request.message  # Can include resume context if needed
             )
         except Exception as e:
-            logger.error(f"Ollama generation error: {e}")
+            logger.error(f"AI generation error: {e}")
             response_text = "I encountered an error while generating a response. Please try again."
         
         # Save assistant response

@@ -86,7 +86,7 @@ def _looks_like_email(value: str) -> bool:
     return bool(re.match(r"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$", (value or "").strip()))
 
 
-def _send_candidate_selection_email_sync(*, to_email: str, full_name: str | None, role_title: str, selection_type: str) -> bool:
+def _send_candidate_selection_email_sync(*, to_email: str, full_name: str | None, role_title: str, selection_type: str, interview_datetime: str | None = None) -> bool:
     enabled = _env_flag("CANDIDATE_SELECTION_EMAIL_ENABLED", default=False)
     logger.info(f"[Email] CANDIDATE_SELECTION_EMAIL_ENABLED = {enabled}")
     if not enabled:
@@ -107,6 +107,9 @@ def _send_candidate_selection_email_sync(*, to_email: str, full_name: str | None
     if not smtp_username or not smtp_password or not from_email:
         logger.error("[Email] SMTP credentials missing: username, password, or from_email is empty")
         return False
+    if smtp_password.lower() in {"password", "your-password", "your-16-digit-gmail-app-password"}:
+        logger.warning(f"[Email] Candidate selection email skipped because SMTP_PASSWORD is not configured (current: {smtp_password[:4]}...)")
+        return False
 
     selection_label = "Final Select" if selection_type == "final_select" else "Selected"
     display_name = (full_name or "Candidate").strip() or "Candidate"
@@ -118,21 +121,33 @@ def _send_candidate_selection_email_sync(*, to_email: str, full_name: str | None
     message.set_content(
         f"Hello {display_name},\n\n"
         f"Your profile has been marked as '{selection_label}' for the role '{role_title}'.\n"
+        f"Interview date and time: {interview_datetime or 'To be confirmed'}\n"
         "Our hiring team may contact you with next steps.\n\n"
         "Thank you for your interest.\n\n"
         "- AI HR Copilot"
     )
 
-    with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
-        server.starttls()
-        server.login(smtp_username, smtp_password)
-        server.send_message(message)
+    try:
+        logger.info(f"[Email] Attempting SMTP connection to {smtp_host}:{smtp_port} for selection email")
+        with smtplib.SMTP(smtp_host, smtp_port, timeout=20) as server:
+            logger.info("[Email] SMTP connection established, starting TLS")
+            server.starttls()
+            logger.info("[Email] TLS started, logging in")
+            server.login(smtp_username, smtp_password)
+            logger.info("[Email] Login successful, sending message")
+            server.send_message(message)
+    except smtplib.SMTPAuthenticationError:
+        logger.warning("[Email] Candidate selection email skipped because SMTP authentication failed")
+        return False
+    except Exception as exc:
+        logger.error(f"[Email] SMTP error during candidate selection email: {exc}")
+        return False
 
-    logger.info(f"[Email] Candidate selection email sent to {to_email}")
+    logger.info(f"[Email] Candidate selection email successfully sent to {to_email}")
     return True
 
 
-async def send_candidate_selection_email(*, to_email: str, full_name: str | None, role_title: str, selection_type: str) -> bool:
+async def send_candidate_selection_email(*, to_email: str, full_name: str | None, role_title: str, selection_type: str, interview_datetime: str | None = None) -> bool:
     try:
         sent = await asyncio.to_thread(
             _send_candidate_selection_email_sync,
@@ -140,8 +155,12 @@ async def send_candidate_selection_email(*, to_email: str, full_name: str | None
             full_name=full_name,
             role_title=role_title,
             selection_type=selection_type,
+            interview_datetime=interview_datetime,
         )
         return bool(sent)
+    except smtplib.SMTPAuthenticationError:
+        logger.warning("[Email] Candidate selection email skipped because SMTP authentication failed")
+        return False
     except Exception as exc:
         logger.error(f"[Email] Failed to send candidate selection email: {exc}", exc_info=True)
         return False

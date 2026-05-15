@@ -30,20 +30,20 @@ export function FileUploadBox({ onBrowse, onDropFiles, disabled = false, selecte
     <div
       onDrop={handleDrop}
       onDragOver={handleDragOver}
-      className="surface-panel-soft rounded-xl border-2 border-dashed border-[var(--app-border)] p-6 text-center hover:border-blue-500 hover:bg-blue-50 transition-all duration-200"
+      className="surface-panel-soft rounded-xl border-2 border-dashed border-[var(--app-border)] p-6 text-center transition-all duration-200 hover:border-[var(--app-brand)] hover:bg-[var(--app-surface-soft)]"
     >
-      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
-        <CloudUpload className="h-6 w-6 text-blue-600" />
+      <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-[var(--app-surface-soft)]">
+        <CloudUpload className="h-6 w-6 text-[var(--app-brand)]" />
       </div>
       <p className="text-base font-semibold text-[var(--app-text)]">Upload candidate resumes</p>
       <p className="mt-1 text-sm text-[var(--app-muted)]">Supported formats: PDF, DOCX, TXT • Max size: 200MB</p>
       <Button type="button" variant="secondary" className="mt-4" onClick={onBrowse} disabled={disabled}>
         Browse files
       </Button>
-      <p className="text-xs text-gray-500 text-center mt-2">
+      <p className="mt-2 text-center text-xs text-[var(--app-muted)]">
         Upload multiple resumes to get AI-powered ranking and top candidate selection.
       </p>
-      {selectedCount > 0 ? <p className="text-sm text-blue-600 mt-2">{selectedCount} files selected</p> : null}
+      {selectedCount > 0 ? <p className="mt-2 text-sm text-[var(--app-brand)]">{selectedCount} files selected</p> : null}
     </div>
   );
 }

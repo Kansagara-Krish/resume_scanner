@@ -194,26 +194,26 @@ export function ProfileTabsModal({ isOpen, onClose }: ProfileTabsModalProps) {
         }
       }}
     >
-      <div className="relative w-[700px] h-[500px] bg-white text-gray-900 rounded-2xl shadow-xl border border-gray-200 flex overflow-hidden">
+      <div className="relative w-[700px] h-[500px] rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] text-[var(--app-text)] shadow-xl flex overflow-hidden">
         <button
           type="button"
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
+          className="absolute top-4 right-4 text-[var(--app-muted)] hover:text-[var(--app-text)]"
           aria-label="Close profile"
         >
           <X className="h-6 w-6" />
         </button>
 
-        <aside className="w-48 bg-gradient-to-b from-gray-50 to-gray-100 border-r border-gray-200 shadow-inner p-4 pt-6">
-          <h2 className="text-gray-800 font-semibold mb-4 px-2">Profile</h2>
+        <aside className="w-48 bg-[var(--app-surface)] border-r border-[var(--app-border)] shadow-inner p-4 pt-6">
+          <h2 className="text-[var(--app-text)] font-semibold mb-4 px-2">Profile</h2>
           <div className="flex flex-col gap-2 mt-4">
             <button
               type="button"
               onClick={() => setActiveTab('account')}
               className={`w-full text-left cursor-pointer ${
                 activeTab === 'account'
-                  ? 'bg-blue-600 text-white shadow-sm rounded-lg px-4 py-2'
-                  : 'text-gray-600 hover:bg-gray-200 transition rounded-lg px-4 py-2'
+                  ? 'bg-[var(--app-brand)] text-white shadow-sm rounded-lg px-4 py-2'
+                  : 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] transition rounded-lg px-4 py-2'
               }`}
             >
               Account
@@ -223,8 +223,8 @@ export function ProfileTabsModal({ isOpen, onClose }: ProfileTabsModalProps) {
               onClick={() => setActiveTab('memory')}
               className={`w-full text-left cursor-pointer ${
                 activeTab === 'memory'
-                  ? 'bg-blue-600 text-white shadow-sm rounded-lg px-4 py-2'
-                  : 'text-gray-600 hover:bg-gray-200 transition rounded-lg px-4 py-2'
+                  ? 'bg-[var(--app-brand)] text-white shadow-sm rounded-lg px-4 py-2'
+                  : 'text-[var(--app-muted)] hover:bg-[var(--app-surface-soft)] transition rounded-lg px-4 py-2'
               }`}
             >
               Memory
@@ -232,7 +232,7 @@ export function ProfileTabsModal({ isOpen, onClose }: ProfileTabsModalProps) {
           </div>
         </aside>
 
-        <section className="flex-1 p-6 bg-white pt-16">
+        <section className="flex-1 p-6 bg-[var(--app-surface)] pt-16">
           <div className="relative h-full">
             <div
               className={`absolute inset-0 overflow-y-auto transition-opacity duration-200 ${
@@ -240,10 +240,10 @@ export function ProfileTabsModal({ isOpen, onClose }: ProfileTabsModalProps) {
               }`}
             >
               <div className="flex flex-col gap-6 text-left">
-                <h3 className="text-xl font-semibold text-gray-900">Account</h3>
+                <h3 className="text-xl font-semibold text-[var(--app-text)]">Account</h3>
 
                 <div className="flex flex-col gap-2">
-                  <label htmlFor="profile-name" className="text-sm text-gray-500">
+                  <label htmlFor="profile-name" className="text-sm text-[var(--app-muted)]">
                     Name
                   </label>
                   <div className="flex items-center gap-3">
@@ -251,13 +251,13 @@ export function ProfileTabsModal({ isOpen, onClose }: ProfileTabsModalProps) {
                       id="profile-name"
                       value={name}
                       onChange={(event) => setName(event.target.value)}
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-elevated)] px-3 py-2 text-sm text-[var(--app-text)] focus:outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
                       placeholder="Firstname lastname like vice"
                     />
                     <button
                       type="button"
                       onClick={handleSaveName}
-                      className="rounded-lg bg-blue-600 px-4 py-2 text-white transition hover:bg-blue-700"
+                      className="rounded-lg bg-[var(--app-brand)] px-4 py-2 text-white transition hover:opacity-95"
                     >
                       Save
                     </button>
@@ -265,21 +265,21 @@ export function ProfileTabsModal({ isOpen, onClose }: ProfileTabsModalProps) {
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm text-gray-500">Email</label>
-                  <p className="text-gray-700">{email}</p>
+                  <label className="text-sm text-[var(--app-muted)]">Email</label>
+                  <p className="text-[var(--app-text)]">{email}</p>
                 </div>
 
-                {status ? <p className="text-sm text-gray-600">{status}</p> : null}
+                {status ? <p className="text-sm text-[var(--app-muted)]">{status}</p> : null}
 
                 <div className="mt-4 border-t pt-6">
-                  <h3 className="text-sm font-semibold text-gray-800">Delete account</h3>
-                  <p className="mt-1 text-sm text-red-500">
+                  <h3 className="text-sm font-semibold text-[var(--app-text)]">Delete account</h3>
+                  <p className="mt-1 text-sm text-red-400">
                     Permanently remove your account and all data.
                   </p>
                   <button
                     type="button"
                     onClick={() => setIsDeleteAccountConfirmOpen(true)}
-                    className="mt-3 rounded-lg border border-red-300 px-4 py-2 text-red-600 transition hover:bg-red-50"
+                    className="mt-3 rounded-lg border border-red-400/40 px-4 py-2 text-red-300 transition hover:bg-red-400/10"
                   >
                     Delete account
                   </button>
@@ -293,39 +293,39 @@ export function ProfileTabsModal({ isOpen, onClose }: ProfileTabsModalProps) {
               }`}
             >
               <div className="space-y-6">
-                <h3 className="text-xl font-semibold text-gray-900">Memory</h3>
+                <h3 className="text-xl font-semibold text-[var(--app-text)]">Memory</h3>
 
-                <div className="rounded-xl border border-red-200 bg-white p-4">
-                  <p className="text-base font-medium text-gray-900">Delete Candidates</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-sm text-red-500">
+                <div className="rounded-xl border border-red-400/20 bg-[var(--app-surface-elevated)] p-4">
+                  <p className="text-base font-medium text-[var(--app-text)]">Delete Candidates</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-red-300">
                     <AlertTriangle className="h-3.5 w-3.5" />
                     Delete all candidates and their analysis data.
                   </p>
                   <button
                     type="button"
                     onClick={() => setMemoryAction('delete-candidates')}
-                    className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-red-600 hover:bg-red-50"
+                    className="mt-3 rounded-lg border border-red-400/40 bg-[var(--app-surface)] px-4 py-2 text-red-300 hover:bg-red-400/10"
                   >
                     Delete all candidates
                   </button>
                 </div>
 
-                <div className="rounded-xl border border-red-200 bg-white p-4">
-                  <p className="text-base font-medium text-gray-900">Delete Jobs</p>
-                  <p className="mt-1 flex items-center gap-1.5 text-sm text-red-500">
+                <div className="rounded-xl border border-red-400/20 bg-[var(--app-surface-elevated)] p-4">
+                  <p className="text-base font-medium text-[var(--app-text)]">Delete Jobs</p>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-red-300">
                     <AlertTriangle className="h-3.5 w-3.5" />
                     Delete all jobs and related ranking data.
                   </p>
                   <button
                     type="button"
                     onClick={() => setMemoryAction('delete-jobs')}
-                    className="mt-3 rounded-lg border border-red-300 bg-white px-4 py-2 text-red-600 hover:bg-red-50"
+                    className="mt-3 rounded-lg border border-red-400/40 bg-[var(--app-surface)] px-4 py-2 text-red-300 hover:bg-red-400/10"
                   >
                     Delete all jobs
                   </button>
                 </div>
 
-                {status ? <p className="text-sm text-gray-600">{status}</p> : null}
+                {status ? <p className="text-sm text-[var(--app-muted)]">{status}</p> : null}
               </div>
             </div>
           </div>

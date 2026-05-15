@@ -8,7 +8,7 @@ import { CandidateCard } from '@/components/analyze/CandidateCard';
 import { CandidateDetailsDrawer } from '@/components/analyze/CandidateDetailsDrawer';
 import { ConfirmModal } from '@/components/chat/confirm-modal';
 import { confirmAutoSelection, deleteCandidate, getCandidates, sendInterviewEmail } from '@/lib/api';
-import { Trash2 } from 'lucide-react';
+import { CheckCircle2, Mail, Trash2 } from 'lucide-react';
 
 type CandidateResult = {
   id: string;
@@ -48,6 +48,7 @@ type CandidateResult = {
   experience_list: Array<{ role: string | null; duration: string | null }>;
   projects: string[];
   certifications: string[];
+  awards: string[];
 };
 
 export default function AnalyzePage() {
@@ -56,10 +57,13 @@ export default function AnalyzePage() {
   const [candidateToDelete, setCandidateToDelete] = useState<CandidateResult | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showConfirmSelectionModal, setShowConfirmSelectionModal] = useState(false);
+  const [showInterviewEmailModal, setShowInterviewEmailModal] = useState(false);
   const [isConfirmingSelection, setIsConfirmingSelection] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [reviewDismissedForJobId, setReviewDismissedForJobId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [interviewDateTime, setInterviewDateTime] = useState('');
 
   const { data: jobs = [] } = useJobs();
   const { data: analyses = [], isLoading: isLoadingAnalyses, refetch } = useAnalysisResults(selectedJobId);
@@ -77,16 +81,24 @@ export default function AnalyzePage() {
   const rows: CandidateResult[] = useMemo(() => {
     return (analyses || [])
       .map((row: any) => {
+        const toPercent = (value: unknown) => {
+          const numberValue = Number(value);
+          if (!Number.isFinite(numberValue)) return 0;
+          return Math.max(0, Math.min(100, numberValue <= 1 && numberValue >= -1 ? numberValue * 100 : numberValue));
+        };
+        const toUnit = (value: unknown) => {
+          const numberValue = Number(value);
+          if (!Number.isFinite(numberValue)) return 0;
+          return Math.max(0, Math.min(1, numberValue > 1 ? numberValue / 100 : numberValue));
+        };
         const rawScore = Number(row.score);
         const rawFinalScore = Number(row.final_score);
-        const finalScorePercent = Number.isFinite(rawFinalScore)
-          ? (rawFinalScore <= 1 ? rawFinalScore * 100 : rawFinalScore)
-          : 0;
+        const finalScorePercent = toPercent(rawFinalScore);
         const resolvedScore = Number.isFinite(rawScore) && rawScore > 0
-          ? rawScore
+          ? toPercent(rawScore)
           : finalScorePercent;
         const resolvedFinalScore = Number.isFinite(rawFinalScore) && rawFinalScore > 0
-          ? (rawFinalScore <= 1 ? rawFinalScore : rawFinalScore / 100)
+          ? toUnit(rawFinalScore)
           : resolvedScore / 100;
 
         const matchedSkills = Array.isArray(row.matched_skills)
@@ -111,12 +123,12 @@ export default function AnalyzePage() {
           name: row.name || 'Unknown candidate',
           email: typeof row.email === 'string' && row.email.trim() ? row.email : null,
           score: Math.max(0, Math.min(100, Math.round(resolvedScore))),
-          education_score: Number(row.education_score || row.academic_score || 0),
-          academic_score: Number(row.academic_score || 0),
-          experience_score: Number(row.experience_score || 0),
-          skill_match_score: Number(row.skill_match_score || 0),
-          project_score: Number(row.project_score || 0),
-          soft_skill_score: Number(row.soft_skill_score || 0),
+          education_score: toUnit(row.education_score || row.academic_score || 0),
+          academic_score: toUnit(row.academic_score || 0),
+          experience_score: toUnit(row.experience_score || 0),
+          skill_match_score: toUnit(row.skill_match_score || 0),
+          project_score: toUnit(row.project_score || 0),
+          soft_skill_score: toUnit(row.soft_skill_score || 0),
           top_skills: computedTopSkills,
           matched_skills: matchedSkills,
           missing_skills: missingSkills,
@@ -131,10 +143,10 @@ export default function AnalyzePage() {
           soft_skills: Array.isArray(row.soft_skills) ? row.soft_skills.filter((i: unknown) => typeof i === 'string') : [],
           normalized_skills: Array.isArray(row.normalized_skills) ? row.normalized_skills.filter((i: unknown) => typeof i === 'string') : [],
           internships: Array.isArray(row.internships) ? row.internships.filter((i: unknown) => typeof i === 'string') : [],
-          communication_score: Number(row.communication_score || 0),
-          leadership_score: Number(row.leadership_score || 0),
-          teamwork_score: Number(row.teamwork_score || 0),
-          problem_solving_score: Number(row.problem_solving_score || 0),
+          communication_score: toUnit(row.communication_score || 0),
+          leadership_score: toUnit(row.leadership_score || 0),
+          teamwork_score: toUnit(row.teamwork_score || 0),
+          problem_solving_score: toUnit(row.problem_solving_score || 0),
           auto_selected: Boolean(row.auto_selected),
           selected: Boolean(row.selected),
           selection_status: typeof row.selection_status === 'string' ? row.selection_status : 'rejected',
@@ -157,6 +169,7 @@ export default function AnalyzePage() {
             : [],
           projects: Array.isArray(row.projects) ? row.projects.filter((i: unknown) => typeof i === 'string') : [],
           certifications: Array.isArray(row.certifications) ? row.certifications.filter((i: unknown) => typeof i === 'string') : [],
+          awards: Array.isArray(row.awards) ? row.awards.filter((i: unknown) => typeof i === 'string') : [],
         };
       })
       .sort((a, b) => b.final_score - a.final_score);
@@ -200,6 +213,26 @@ export default function AnalyzePage() {
 
   const shortlistedCount = rows.filter((row) => row.score >= 70).length;
   const selectedCount = confirmedCandidates.length;
+
+  const formatInterviewDateTime = (value: string) => {
+    if (!value) {
+      return '';
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return value;
+    }
+
+    return parsed.toLocaleString('en-GB', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
 
   const normalizeName = (value: string) =>
     String(value || '')
@@ -290,22 +323,49 @@ export default function AnalyzePage() {
 
     if (candidateEmails.length === 0) {
       setActionError('No confirmed candidates have a valid email address to send interview invites.');
+      setActionSuccess(null);
+      return;
+    }
+
+    if (!interviewDateTime.trim()) {
+      setActionError('Please confirm the interview date and time before sending.');
+      setActionSuccess(null);
       return;
     }
 
     setIsSendingEmail(true);
     setActionError(null);
+    setActionSuccess(null);
     try {
-      await sendInterviewEmail({
+      const formattedInterviewDateTime = formatInterviewDateTime(interviewDateTime);
+      const response = await sendInterviewEmail({
         candidate_emails: candidateEmails,
         job_role: String(selectedJob?.title || 'Selected Role'),
         template: 'Interview Invitation',
+        interview_datetime: formattedInterviewDateTime,
       });
+      const sentCount = Number(response?.sent_count || candidateEmails.length);
+      setActionSuccess(
+        response?.message ||
+          `Interview email sent successfully to HR for ${sentCount} candidate${sentCount === 1 ? '' : 's'}.`
+      );
+      setShowInterviewEmailModal(false);
     } catch (error) {
       setActionError(error instanceof Error ? error.message : 'Failed to send interview email.');
     } finally {
       setIsSendingEmail(false);
     }
+  };
+
+  const openInterviewEmailModal = () => {
+    setActionError(null);
+    setActionSuccess(null);
+    if (!interviewDateTime) {
+      const defaultDate = new Date();
+      defaultDate.setMinutes(defaultDate.getMinutes() - defaultDate.getTimezoneOffset());
+      setInterviewDateTime(defaultDate.toISOString().slice(0, 16));
+    }
+    setShowInterviewEmailModal(true);
   };
 
   return (
@@ -328,15 +388,8 @@ export default function AnalyzePage() {
               <option key={job.id} value={job.id}>{job.title}</option>
             ))}
           </select>
-          <Button 
-            onClick={() => void refetch()}
-            disabled={!selectedJobId || isLoadingAnalyses}
-            variant="secondary"
-          >
-            {isLoadingAnalyses ? 'Refreshing...' : 'Re-run Analysis'}
-          </Button>
           <Button
-            onClick={() => void handleSendInterviewEmail()}
+            onClick={openInterviewEmailModal}
             disabled={confirmedCandidates.length === 0 || isSendingEmail}
           >
             {isSendingEmail ? 'Sending...' : 'Send Interview Email'}
@@ -360,6 +413,13 @@ export default function AnalyzePage() {
       {actionError ? (
         <div className="rounded-md border border-[var(--app-danger-border)] bg-[var(--app-danger-bg)] p-3 text-sm text-[var(--app-danger-text)]">
           {actionError}
+        </div>
+      ) : null}
+
+      {actionSuccess ? (
+        <div className="flex items-start gap-3 rounded-md border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-900 shadow-sm">
+          <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" />
+          <p>{actionSuccess}</p>
         </div>
       ) : null}
 
@@ -428,6 +488,40 @@ export default function AnalyzePage() {
         cancelDisabled={isConfirmingSelection}
         confirmDisabled={isConfirmingSelection}
       />
+
+      <ConfirmModal
+        isOpen={showInterviewEmailModal}
+        onClose={() => setShowInterviewEmailModal(false)}
+        onConfirm={() => void handleSendInterviewEmail()}
+        title="Confirm interview schedule"
+        message="Please confirm the interview date and time before sending email to HR and candidates."
+        confirmLabel={isSendingEmail ? 'Sending...' : 'Send Email'}
+        confirmIcon={<Mail className="h-4 w-4" />}
+        confirmDisabled={isSendingEmail || !interviewDateTime.trim()}
+        cancelDisabled={isSendingEmail}
+        confirmTone="info"
+      >
+        <div className="mt-4 space-y-3">
+          <label htmlFor="interview-date-time" className="block text-sm font-medium text-[var(--app-text)]">
+            Interview date and time
+          </label>
+          <input
+            id="interview-date-time"
+            type="datetime-local"
+            value={interviewDateTime}
+            onChange={(event) => setInterviewDateTime(event.target.value)}
+            className="h-11 w-full rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm text-[var(--app-text)] outline-none focus:ring-2 focus:ring-[var(--app-focus)]"
+          />
+          {interviewDateTime ? (
+            <p className="text-sm font-medium text-[var(--app-text)]">
+              Will send as: {formatInterviewDateTime(interviewDateTime)}
+            </p>
+          ) : null}
+          <p className="text-xs text-[var(--app-muted)]">
+            This will be included in the interview invite and the success message shown to HR.
+          </p>
+        </div>
+      </ConfirmModal>
 
       <ConfirmModal
         isOpen={Boolean(candidateToDelete)}

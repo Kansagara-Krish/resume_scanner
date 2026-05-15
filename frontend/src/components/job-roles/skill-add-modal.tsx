@@ -214,12 +214,12 @@ export function SkillAddModal({ isOpen, onClose, onSubmit, existingSkills }: Ski
         }
       }}
     >
-      <div className="dropdown-pop w-full max-w-[400px] rounded-2xl bg-white p-6 shadow-xl">
-        <h2 className="font-display text-xl font-semibold text-gray-900">Add New Skill</h2>
+      <div className="dropdown-pop w-full max-w-[400px] rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-6 shadow-xl">
+        <h2 className="font-display text-xl font-semibold text-[var(--app-text)]">Add New Skill</h2>
 
         <div className="mt-4 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700" htmlFor="new-skill-name">
+            <label className="mb-1 block text-sm font-medium text-[var(--app-muted)]" htmlFor="new-skill-name">
               Skill Name(s)
             </label>
             <div className="relative">
@@ -232,11 +232,11 @@ export function SkillAddModal({ isOpen, onClose, onSubmit, existingSkills }: Ski
                 onBlur={commitInput}
                 onPaste={handlePaste}
                 placeholder="e.g. python, react, sql"
-                className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2"
+                className="h-10 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-[var(--app-text)]"
               />
 
               {suggestions.length > 0 && normalizeSkillName(inputValue) ? (
-                <div className="absolute z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
+                <div className="absolute z-10 mt-1 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-elevated)] shadow-lg">
                   {suggestions.map((suggestion, index) => (
                     <button
                       key={suggestion}
@@ -247,7 +247,7 @@ export function SkillAddModal({ isOpen, onClose, onSubmit, existingSkills }: Ski
                         setInputValue('');
                       }}
                       className={`block w-full px-3 py-2 text-left text-sm transition ${
-                        index === activeSuggestionIndex ? 'bg-blue-50 text-blue-700' : 'text-gray-700 hover:bg-gray-50'
+                        index === activeSuggestionIndex ? 'bg-[rgba(124,183,255,0.12)] text-[var(--app-text)]' : 'text-[var(--app-text)] hover:bg-[var(--app-surface-soft)]'
                       }`}
                     >
                       {formatSkillDisplay(suggestion)}
@@ -256,17 +256,17 @@ export function SkillAddModal({ isOpen, onClose, onSubmit, existingSkills }: Ski
                 </div>
               ) : null}
             </div>
-            <p className="mt-1 text-xs text-gray-500">Type skills separated by comma or press Enter.</p>
+            <p className="mt-1 text-xs text-[var(--app-muted)]">Type skills separated by comma or press Enter.</p>
 
             {skills.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-2">
                 {skills.map((skill) => (
-                  <span key={skill} className="inline-flex items-center gap-1 rounded-full border border-gray-300 bg-gray-50 px-2.5 py-1 text-xs text-gray-700">
+                  <span key={skill} className="inline-flex items-center gap-1 rounded-full border border-[var(--app-border)] bg-[var(--app-surface)] px-2.5 py-1 text-xs text-[var(--app-text)]">
                     {formatSkillDisplay(skill)}
                     <button
                       type="button"
                       onClick={() => removeSkill(skill)}
-                      className="rounded-full p-0.5 text-gray-500 transition hover:bg-gray-200 hover:text-gray-700"
+                      className="rounded-full p-0.5 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]"
                       aria-label={`Remove ${formatSkillDisplay(skill)}`}
                     >
                       <X className="h-3 w-3" />
@@ -278,14 +278,14 @@ export function SkillAddModal({ isOpen, onClose, onSubmit, existingSkills }: Ski
           </div>
 
           <div>
-            <label className="mb-1 block text-sm font-medium text-gray-700" htmlFor="new-skill-level">
+            <label className="mb-1 block text-sm font-medium text-[var(--app-muted)]" htmlFor="new-skill-level">
               Skill Level Default
             </label>
             <select
               id="new-skill-level"
               value={level}
               onChange={(event) => setLevel(Number(event.target.value) as SkillLevel)}
-              className="h-10 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700"
+              className="h-10 w-full rounded-lg border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm text-[var(--app-text)]"
             >
               <option value={0}>Not Required</option>
               <option value={1}>Beginner</option>
@@ -295,12 +295,12 @@ export function SkillAddModal({ isOpen, onClose, onSubmit, existingSkills }: Ski
             </select>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-gray-700">
+          <label className="flex items-center gap-2 text-sm text-[var(--app-text)]">
             <input
               type="checkbox"
               checked={makeGlobal}
               onChange={(event) => setMakeGlobal(event.target.checked)}
-              className="h-4 w-4 rounded border-gray-300"
+              className="h-4 w-4 rounded border-[var(--app-border)]"
             />
             Make this skill available for all users
           </label>

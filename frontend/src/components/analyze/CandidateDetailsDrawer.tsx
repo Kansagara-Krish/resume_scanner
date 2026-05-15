@@ -37,6 +37,7 @@ type CandidateResult = {
   experience_list: Array<{ role: string | null; duration: string | null }>;
   projects: string[];
   certifications: string[];
+  awards: string[];
 };
 
 type CandidateDetailsDrawerProps = {
@@ -54,6 +55,7 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
     experience: true,
     projects: false,
     certifications: false,
+    awards: false,
   });
 
   useEffect(() => {
@@ -137,20 +139,22 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
       experience_list: [],
       projects: [],
       certifications: [],
+      awards: [],
     };
 
-  const roundedScore = Math.max(0, Math.min(100, Math.round(candidateData.score)));
-  const formatPercent = (value: number) => `${Math.max(0, Math.min(100, Math.round(value * 100)))}%`;
+  const toPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value <= 1 && value >= -1 ? value * 100 : value)));
+  const roundedScore = toPercent(candidateData.score);
+  const formatPercent = (value: number) => `${toPercent(value)}%`;
   const DetailRow = ({ label, value }: { label: string; value: string }) => (
-    <div className="flex items-center justify-between rounded-md border border-[var(--app-border)] bg-white px-3 py-2">
+    <div className="flex items-center justify-between rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2">
       <span className="text-sm text-[var(--app-muted)]">{label}</span>
       <span className="text-sm font-semibold text-[var(--app-text)]">{value}</span>
     </div>
   );
   const ScoreBar = ({ label, value }: { label: string; value: number }) => {
-    const pct = Math.max(0, Math.min(100, Math.round(value * 100)));
+    const pct = toPercent(value);
     return (
-      <div className="rounded-md border border-[var(--app-border)] bg-white p-3">
+      <div className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] p-3">
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs uppercase tracking-wide text-[var(--app-muted)]">{label}</p>
           <p className="text-xs font-semibold text-[var(--app-text)]">{pct}%</p>
@@ -275,7 +279,7 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
       role="presentation"
     >
       <aside
-        className={`absolute right-3 top-3 h-[calc(100%-1.5rem)] w-[calc(100%-1.5rem)] max-w-4xl overflow-y-auto rounded-[30px] border border-white/50 bg-gradient-to-br from-white via-slate-50 to-slate-100 p-6 shadow-[0_24px_56px_rgba(15,23,42,0.35)] ${
+        className={`absolute right-3 top-3 h-[calc(100%-1.5rem)] w-[calc(100%-1.5rem)] max-w-4xl overflow-y-auto rounded-[30px] border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-6 shadow-[0_24px_56px_rgba(2,6,23,0.2)] ${
           isOpen && !isClosing ? 'drawer-page-enter' : 'drawer-page-exit'
         }`}
       >
@@ -297,7 +301,7 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
         <section className="mb-6 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-4">
           <h3 className="font-semibold text-[var(--app-text)]">Match Score</h3>
           <div className="mt-4 flex items-center gap-4">
-            <div className="grid h-24 w-24 place-items-center rounded-full border-[10px] border-emerald-500 bg-white">
+            <div className="grid h-24 w-24 place-items-center rounded-full border-[10px] border-emerald-400 bg-[var(--app-surface-elevated)]">
               <div className="text-sm font-semibold text-[var(--app-text)]">{roundedScore}%</div>
             </div>
             <p className="text-sm text-[var(--app-muted)]">Overall candidate-role compatibility score.</p>
@@ -321,7 +325,7 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
                   educationRows.map((entry, index) => (
                     <div
                       key={`${entry.degree || 'degree'}-${index}`}
-                      className="rounded-md border border-[var(--app-border)] bg-white px-3 py-2"
+                      className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2"
                     >
                       <p className="text-sm font-semibold text-[var(--app-text)]">{entry.degree || 'Degree not specified'}</p>
                       <p className="text-xs text-[var(--app-muted)]">
@@ -350,7 +354,7 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
                   experienceRows.map((entry, index) => (
                     <div
                       key={`${entry.role || 'experience'}-${index}`}
-                      className="rounded-md border border-[var(--app-border)] bg-white px-3 py-2"
+                      className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2"
                     >
                       <p className="text-sm font-semibold text-[var(--app-text)]">{entry.role || 'Role not specified'}</p>
                       <p className="text-xs text-[var(--app-muted)]">{entry.duration || 'Duration not specified'}</p>
@@ -372,7 +376,7 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
                 {candidateData.projects.length > 0 ? (
                   <ul className="space-y-1 text-sm text-[var(--app-text)]">
                     {candidateData.projects.map((item) => (
-                      <li key={item} className="rounded-md border border-[var(--app-border)] bg-white px-3 py-2">{item}</li>
+                      <li key={item} className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2">{item}</li>
                     ))}
                   </ul>
                 ) : (
@@ -389,11 +393,27 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
               {candidateData.certifications.length > 0 ? (
                 <ul className="space-y-1 text-sm text-[var(--app-text)]">
                   {candidateData.certifications.map((item) => (
-                    <li key={item} className="rounded-md border border-[var(--app-border)] bg-white px-3 py-2">{item}</li>
+                    <li key={item} className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2">{item}</li>
                   ))}
                 </ul>
               ) : (
                 <p className="text-sm text-[var(--app-muted)]">No certifications extracted.</p>
+              )}
+            </AccordionSection>
+
+            <AccordionSection
+              id="awards"
+              title="Awards & Achievements"
+              subtitle="Awards, rewards, honors, and recognitions"
+            >
+              {candidateData.awards.length > 0 ? (
+                <ul className="space-y-1 text-sm text-[var(--app-text)]">
+                  {candidateData.awards.map((item) => (
+                    <li key={item} className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2">{item}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-[var(--app-muted)]">No awards or achievements extracted.</p>
               )}
             </AccordionSection>
           </div>
@@ -402,13 +422,13 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
             <h3 className="font-semibold text-[var(--app-text)]">Skill Evaluation</h3>
             <div className="mt-3 grid gap-3 sm:grid-cols-2">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Matched Skills</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-emerald-200">Matched Skills</p>
                 <ul className="mt-2 space-y-1 text-sm text-[var(--app-text)]">
                   {candidateData.matched_skills.length > 0 ? candidateData.matched_skills.map((skill) => <li key={skill}>• {skill}</li>) : <li>Not provided</li>}
                 </ul>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Missing Skills</p>
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-200">Missing Skills</p>
                 <ul className="mt-2 space-y-1 text-sm text-[var(--app-text)]">
                   {candidateData.missing_skills.length > 0 ? candidateData.missing_skills.map((skill) => <li key={skill}>• {skill}</li>) : <li>None</li>}
                 </ul>
@@ -424,7 +444,7 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
               <ScoreBar label="Teamwork" value={candidateData.teamwork_score} />
               <ScoreBar label="Problem-solving" value={candidateData.problem_solving_score} />
             </div>
-            <div className="mt-3 rounded-md border border-[var(--app-border)] bg-white px-3 py-2">
+            <div className="mt-3 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-[var(--app-muted)]">Extracted Soft Skills</p>
               <p className="mt-1 text-sm text-[var(--app-text)]">
                 {candidateData.soft_skills.length > 0 ? candidateData.soft_skills.join(', ') : 'Not provided'}
@@ -440,14 +460,14 @@ export function CandidateDetailsDrawer({ candidate, isOpen, onClose }: Candidate
           <h3 className="font-semibold text-[var(--app-text)]">Top Matched Skills Snapshot</h3>
           <div className="mt-3 space-y-2">
             {candidateData.top_skills.slice(0, 5).map((skill) => (
-              <div key={skill} className="flex items-center justify-between rounded-md border border-[var(--app-border)] bg-white px-3 py-2 text-sm">
+              <div key={skill} className="flex items-center justify-between rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2 text-sm">
                 <span className="text-[var(--app-text)]">{skill}</span>
-                <span className="text-emerald-700">Aligned</span>
+                <span className="text-emerald-200">Aligned</span>
               </div>
             ))}
             {candidateData.top_skills.length === 0 ? <p className="text-sm text-[var(--app-muted)]">No matched skill snapshot available.</p> : null}
           </div>
-          <div className="mt-4 rounded-md border border-[var(--app-border)] bg-white px-3 py-2">
+          <div className="mt-4 rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 py-2">
             <p className="text-xs font-semibold uppercase tracking-wide text-[var(--app-muted)]">Normalized Skills</p>
             {cleanedNormalizedSkills.length > 0 ? (
               <div className="mt-2 flex flex-wrap gap-1.5">

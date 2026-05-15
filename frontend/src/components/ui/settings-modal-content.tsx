@@ -71,7 +71,7 @@ export function SettingsModalContent({ onClose }: SettingsModalContentProps) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       <div>
-        <label htmlFor="modal-theme" className="mb-2 block text-sm font-medium text-gray-700">
+        <label htmlFor="modal-theme" className="mb-2 block text-sm font-medium text-[var(--app-muted)]">
           Theme
         </label>
         <select
@@ -83,7 +83,7 @@ export function SettingsModalContent({ onClose }: SettingsModalContentProps) {
               theme: event.target.value as AppTheme,
             }))
           }
-          className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-700"
+          className="h-10 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-3 text-sm text-[var(--app-text)]"
         >
           {themes.map((theme) => (
             <option key={theme} value={theme}>
@@ -94,9 +94,9 @@ export function SettingsModalContent({ onClose }: SettingsModalContentProps) {
       </div>
 
       <div>
-        <p className="mb-2 text-sm font-medium text-gray-700">Notifications</p>
-        <div className="space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-4">
-          <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
+        <p className="mb-2 text-sm font-medium text-[var(--app-text)]">Notifications</p>
+        <div className="space-y-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4">
+          <label className="flex items-center justify-between gap-3 text-sm text-[var(--app-text)]">
             Candidate ranking alerts
             <input
               type="checkbox"
@@ -112,7 +112,7 @@ export function SettingsModalContent({ onClose }: SettingsModalContentProps) {
               }
             />
           </label>
-          <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
+          <label className="flex items-center justify-between gap-3 text-sm text-[var(--app-text)]">
             Chat summary updates
             <input
               type="checkbox"
@@ -128,7 +128,7 @@ export function SettingsModalContent({ onClose }: SettingsModalContentProps) {
               }
             />
           </label>
-          <label className="flex items-center justify-between gap-3 text-sm text-gray-700">
+          <label className="flex items-center justify-between gap-3 text-sm text-[var(--app-text)]">
             Product update notices
             <input
               type="checkbox"
@@ -151,9 +151,9 @@ export function SettingsModalContent({ onClose }: SettingsModalContentProps) {
         <Button type="submit">Save</Button>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-        <p className="text-sm font-semibold text-gray-800">Memory</p>
-        <p className="text-sm text-gray-600">Manage local chat and app data stored in this browser.</p>
+      <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 space-y-3">
+        <p className="text-sm font-semibold text-[var(--app-text)]">Memory</p>
+        <p className="text-sm text-[var(--app-muted)]">Manage local chat and app data stored in this browser.</p>
         <div className="flex flex-wrap gap-2">
           <Button type="button" variant="secondary" onClick={handleDeleteChats}>
             Delete chat memory
@@ -164,7 +164,7 @@ export function SettingsModalContent({ onClose }: SettingsModalContentProps) {
         </div>
       </div>
 
-      {status ? <p className="text-sm text-gray-600">{status}</p> : null}
+      {status ? <p className="text-sm text-[var(--app-muted)]">{status}</p> : null}
     </form>
   );
 }

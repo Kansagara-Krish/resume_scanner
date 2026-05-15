@@ -62,6 +62,30 @@ The **Chatbase** feature allows you to interact with your candidate database usi
 
 ---
 
+## 🔋 Resource Management (Local AI)
+
+This application uses **Ollama** for processing resumes. We've implemented **automatic lifecycle management** for optimal resource usage:
+
+- **Ollama is automatically started** when you launch the backend server (no manual setup needed).
+- **Ollama is automatically stopped** when you shut down the backend server, freeing up CPU/RAM resources.
+- **Health monitoring**: If Ollama crashes during operation, the backend will automatically restart it.
+- You don't need to manually run `ollama serve` anymore—just start the backend normally.
+
+**No action required from you**—Ollama will be managed automatically in the background!
+
+---
+
+## 🛠️ Managing Data: Bulk Delete
+
+If you want to clear your candidate database and start fresh:
+1. Go to the **Candidates** page.
+2. Select the **All Candidates** tab.
+3. Click the **Delete All** button at the top right.
+4. Confirm the action in the pop-up.
+   *Note: This will remove all candidates and their extracted data from your view.*
+
+---
+
 ## ⚙️ Settings & Customization
 
 - **Models**: The application uses local models via Ollama. You can verify the active model in the backend settings.

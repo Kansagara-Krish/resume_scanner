@@ -9,9 +9,9 @@ type AnalysisBadgeProps = {
 };
 
 const toneClasses: Record<BadgeTone, string> = {
-  neutral: 'border border-gray-200 bg-gray-100 text-gray-600',
-  success: 'border border-emerald-200 bg-emerald-100 text-emerald-700',
-  green: 'border border-green-200 bg-green-100 text-green-700',
+  neutral: 'border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)]',
+  success: 'border border-emerald-400/30 bg-emerald-400/10 text-emerald-300',
+  green: 'border border-green-400/30 bg-green-400/10 text-green-300',
 };
 
 export function AnalysisBadge({ children, tone = 'neutral', className }: AnalysisBadgeProps) {

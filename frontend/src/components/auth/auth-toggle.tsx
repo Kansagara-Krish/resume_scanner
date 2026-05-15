@@ -9,13 +9,13 @@ type AuthToggleProps = {
 
 export function AuthToggle({ mode, onChange }: AuthToggleProps) {
   return (
-    <div className="mb-5 grid grid-cols-2 rounded-xl bg-slate-100 p-1">
+    <div className="mb-5 grid grid-cols-2 rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
       <button
         type="button"
         onClick={() => onChange('login')}
         className={cn(
           'rounded-lg px-3 py-2 text-sm font-medium transition-all',
-          mode === 'login' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+          mode === 'login' ? 'bg-[var(--app-surface-elevated)] text-[var(--app-text)] shadow-sm' : 'text-[var(--app-muted)] hover:text-[var(--app-text)]'
         )}
       >
         Log in
@@ -25,7 +25,7 @@ export function AuthToggle({ mode, onChange }: AuthToggleProps) {
         onClick={() => onChange('signup')}
         className={cn(
           'rounded-lg px-3 py-2 text-sm font-medium transition-all',
-          mode === 'signup' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
+          mode === 'signup' ? 'bg-[var(--app-surface-elevated)] text-[var(--app-text)] shadow-sm' : 'text-[var(--app-muted)] hover:text-[var(--app-text)]'
         )}
       >
         Sign up

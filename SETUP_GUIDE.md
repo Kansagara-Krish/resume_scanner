@@ -23,28 +23,37 @@ The Resume Scanner uses Ollama for local, privacy-focused resume parsing and int
 2.  **Verify**: Open a terminal and run `ollama --version`.
 
 ### Model Preparation
-By default, the project is configured to use `qwen2.5-coder:7b`.
+By default, the project is configured to use `llama3:latest`.
 1.  **Pull the model**:
     ```bash
-    ollama pull qwen2.5-coder:7b
+    ollama pull llama3:latest
     ```
-2.  **Alternative Models**: If you want to use a different model (like `llama3`), pull it:
+2.  **Alternative Models**: If you want to use a different model, pull it:
     ```bash
-    ollama pull llama3
+    ollama pull <model-name>
     ```
 
 ### Running Ollama
-Ensure the Ollama server is running in the background. Usually, it starts automatically on login, but you can start it manually:
-```bash
-ollama serve
-```
+**Important**: As of the latest version, Ollama is **automatically managed by the backend**. You do **NOT** need to manually start it. The backend will:
+- Automatically start Ollama when it launches
+- Monitor Ollama's health and auto-restart if needed
+- Gracefully stop Ollama when the backend shuts down
+
+**Important**: Ensure Ollama is installed and available in your system PATH. The backend will handle the lifecycle automatically.
 
 ---
 
 ## 3. Database & Shared Infrastructure
 
 1.  **Start PostgreSQL**: Ensure your database service is running and you have a connection string ready.
-    - Example: `postgresql://user:password@localhost:5432/resume_scanner`
+    - Example: `postgresql://user:password@localhost:5432/hr_copilot`
+    - **Windows Users**: See [WINDOWS_SETUP.md](WINDOWS_SETUP.md) for detailed PostgreSQL installation
+    
+    Quick start (Windows with installed PostgreSQL):
+    ```powershell
+    Start-Service postgresql-x64-15
+    psql -U postgres -c "CREATE DATABASE hr_copilot;"
+    ```
 
 ---
 
@@ -68,7 +77,7 @@ ollama serve
     ```env
     DATABASE_URL="postgresql://user:password@localhost:5432/resume_scanner"
     OLLAMA_BASE_URL="http://localhost:11434"
-    OLLAMA_MODEL="qwen2.5-coder:7b"
+    OLLAMA_MODEL="llama3:latest"
     SECRET_KEY="your_secure_random_key"
     ```
 5.  **Initialize Database**:
@@ -80,6 +89,8 @@ ollama serve
     ```bash
     uvicorn app.main:app --reload
     ```
+    
+    **Note**: The backend will automatically start Ollama when it launches. No manual Ollama startup is required. The Ollama process will be gracefully terminated when you stop the backend server.
 
 ---
 
@@ -111,16 +122,18 @@ ollama serve
 
 ## 6. Running with Docker (Quickest)
 
-If you prefer using Docker, you can start everything (except the Ollama service) with one command from the project root:
+If you prefer using Docker, you can start everything with one command from the project root:
 ```bash
 docker-compose up --build
 ```
-*Note: You still need Ollama running on your host machine for the backend to connect to it via `host.docker.internal` or your local IP.*
+
+**Note**: Ollama is automatically managed by the backend service within the Docker container. You do not need to run a separate Ollama service. Ensure the Ollama model has been pulled on the container's system (this can be added to the backend Dockerfile if needed).
 
 ---
 
 ## Troubleshooting
 
-- **Ollama Connection Refused**: Ensure `ollama serve` is running and the `OLLAMA_BASE_URL` in `backend/.env` is accessible.
-- **Model Not Found**: Make sure you have run `ollama pull <model_name>` for the exact model specified in your `.env`.
+- **Ollama Not Starting**: Ensure Ollama is installed and available in your system PATH. You can verify this by running `ollama --version` in a terminal.
+- **Model Not Found**: Make sure you have run `ollama pull <model_name>` for the exact model specified in your `.env` (default: `llama3:latest`).
 - **Prisma Errors**: Ensure `DATABASE_URL` is correct and PostgreSQL is accepting connections.
+- **Ollama Process Issues**: Check the backend logs for error messages. The backend will attempt to auto-restart Ollama if it crashes.

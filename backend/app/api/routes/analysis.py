@@ -109,6 +109,36 @@ def _to_float(value):
     return None
 
 
+def _to_int(value):
+    if isinstance(value, int):
+        return value
+    float_value = _to_float(value)
+    if float_value is None:
+        return None
+    try:
+        return int(float_value)
+    except (TypeError, ValueError):
+        return None
+
+
+def _score_to_percent(value):
+    score = _to_float(value)
+    if score is None:
+        return 0.0
+    if -1 <= score <= 1:
+        score *= 100
+    return max(0.0, min(100.0, score))
+
+
+def _score_to_unit(value):
+    score = _to_float(value)
+    if score is None:
+        return 0.0
+    if score > 1:
+        score /= 100
+    return max(0.0, min(1.0, score))
+
+
 def _safe_str(value):
     if isinstance(value, str) and value.strip():
         return value.strip()
@@ -116,9 +146,61 @@ def _safe_str(value):
 
 
 def _normalize_string_list(value):
-    if not isinstance(value, list):
+    items = value if isinstance(value, list) else ([value] if isinstance(value, str) else [])
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        text = ""
+        if isinstance(item, str):
+            text = item
+        elif isinstance(item, dict):
+            text = (
+                item.get("name")
+                or item.get("title")
+                or item.get("certificate")
+                or item.get("certification")
+                or item.get("award")
+                or item.get("description")
+                or ""
+            )
+        text = re.sub(r"\s+", " ", str(text)).strip(" -:;,\t\r\n")
+        if text and text.lower() not in seen:
+            normalized.append(text)
+            seen.add(text.lower())
+    return normalized
+
+
+def _extract_section_items(text: str, headings: list[str], stop_headings: list[str] | None = None) -> list[str]:
+    if not text:
         return []
-    return [str(item).strip() for item in value if isinstance(item, str) and str(item).strip()]
+
+    stop_headings = stop_headings or [
+        "education", "experience", "work experience", "skills", "technical skills",
+        "projects", "internships", "certifications", "certificates", "awards",
+        "achievements", "honors", "publications", "languages", "interests",
+        "summary", "objective", "contact", "personal details",
+    ]
+    heading_pattern = "|".join(re.escape(item) for item in headings)
+    stop_pattern = "|".join(re.escape(item) for item in stop_headings)
+    pattern = rf"(?ims)^\s*(?:{heading_pattern})\s*:?\s*$\s*(.*?)(?=^\s*(?:{stop_pattern})\s*:?\s*$|\Z)"
+    items: list[str] = []
+
+    for match in re.finditer(pattern, text):
+        for line in match.group(1).splitlines():
+            cleaned = re.sub(r"^\s*(?:[-*•]|\d+[.)])\s*", "", line).strip()
+            cleaned = re.sub(r"\s+", " ", cleaned).strip(" -:;,\t\r\n")
+            if 3 <= len(cleaned) <= 180:
+                items.append(cleaned)
+
+    return _normalize_string_list(items)
+
+
+def _extract_detail_list(parsed: dict, text: str, keys: list[str], headings: list[str]) -> list[str]:
+    values: list[str] = []
+    for key in keys:
+        values.extend(_normalize_string_list(parsed.get(key)))
+    values.extend(_extract_section_items(text, headings))
+    return _normalize_string_list(values)
 
 
 def _normalize_degrees(value):
@@ -178,7 +260,9 @@ def _extract_normalized_skills(parsed: dict, text: str):
 
 
 def _extract_internships(parsed: dict, text: str):
-    return _normalize_string_list(parsed.get("internships"))
+    return _extract_detail_list(parsed, text, ["internships", "internship"], ["internships", "internship"])
+
+
 def _extract_candidate_details(analysis) -> dict:
     resume = getattr(analysis, "resume", None)
     parsed = resume.parsed_data if resume and isinstance(resume.parsed_data, dict) else {}
@@ -204,14 +288,25 @@ def _extract_candidate_details(analysis) -> dict:
         "soft_skills": getattr(analysis, "soft_skills", None) if isinstance(getattr(analysis, "soft_skills", None), list) else _extract_soft_skills_list(parsed, resume_text),
         "normalized_skills": getattr(analysis, "normalized_skills", None) if isinstance(getattr(analysis, "normalized_skills", None), list) else sorted(list(_extract_normalized_skills(parsed, resume_text))),
         "internships": _extract_internships(parsed, resume_text),
-        "communication_score": getattr(analysis, "communication_score", 0) or 0,
-        "leadership_score": getattr(analysis, "leadership_score", 0) or 0,
-        "teamwork_score": getattr(analysis, "teamwork_score", 0) or 0,
-        "problem_solving_score": getattr(analysis, "problem_solving_score", 0) or 0,
+        "communication_score": _score_to_unit(getattr(analysis, "communication_score", 0) or 0),
+        "leadership_score": _score_to_unit(getattr(analysis, "leadership_score", 0) or 0),
+        "teamwork_score": _score_to_unit(getattr(analysis, "teamwork_score", 0) or 0),
+        "problem_solving_score": _score_to_unit(getattr(analysis, "problem_solving_score", 0) or 0),
         "degrees": _normalize_degrees(parsed.get("degrees")),
         "experience_list": _normalize_experience_list(parsed.get("experience_list")),
-        "projects": _normalize_string_list(parsed.get("projects")),
-        "certifications": _normalize_string_list(parsed.get("certifications")),
+        "projects": _extract_detail_list(parsed, resume_text, ["projects", "project"], ["projects", "academic projects", "personal projects"]),
+        "certifications": _extract_detail_list(
+            parsed,
+            resume_text,
+            ["certifications", "certificates", "certificate", "licenses"],
+            ["certifications", "certificates", "certificate", "licenses", "courses"],
+        ),
+        "awards": _extract_detail_list(
+            parsed,
+            resume_text,
+            ["awards", "achievements", "honors", "rewards", "recognitions"],
+            ["awards", "achievements", "honors", "rewards", "recognitions", "accomplishments"],
+        ),
     }
 
 
@@ -291,14 +386,14 @@ async def list_analysis(
     return [
         AnalysisResult(
             candidate_name=resolve_candidate_name(a.resume),
-            score=a.score,
-            education_score=getattr(a, "academic_score", 0) or 0,
-            academic_score=getattr(a, "academic_score", 0) or 0,
-            experience_score=getattr(a, "experience_score", 0) or 0,
-            skill_match_score=getattr(a, "skill_match_score", 0) or 0,
-            project_score=getattr(a, "project_score", 0) or 0,
-            soft_skill_score=getattr(a, "soft_skill_score", 0) or 0,
-            final_score=getattr(a, "final_score", 0) or 0,
+            score=_score_to_percent(a.score),
+            education_score=_score_to_unit(getattr(a, "academic_score", 0) or 0),
+            academic_score=_score_to_unit(getattr(a, "academic_score", 0) or 0),
+            experience_score=_score_to_unit(getattr(a, "experience_score", 0) or 0),
+            skill_match_score=_score_to_unit(getattr(a, "skill_match_score", 0) or 0),
+            project_score=_score_to_unit(getattr(a, "project_score", 0) or 0),
+            soft_skill_score=_score_to_unit(getattr(a, "soft_skill_score", 0) or 0),
+            final_score=_score_to_unit(getattr(a, "final_score", 0) or a.score or 0),
             matched_skills=resolve_skill_arrays(a)[0],
             missing_skills=resolve_skill_arrays(a)[1]
         ) for a in analyses
@@ -332,14 +427,14 @@ async def list_analysis_results(
                 resume_id=analysis.resume.id,
                 name=resolve_candidate_name(analysis.resume),
                 email=(analysis.resume.parsed_data.get("email") if isinstance(analysis.resume.parsed_data, dict) else None),
-                score=analysis.score,
-                education_score=getattr(analysis, "academic_score", 0) or 0,
-                academic_score=getattr(analysis, "academic_score", 0) or 0,
-                experience_score=getattr(analysis, "experience_score", 0) or 0,
-                skill_match_score=getattr(analysis, "skill_match_score", 0) or 0,
-                project_score=getattr(analysis, "project_score", 0) or 0,
-                soft_skill_score=getattr(analysis, "soft_skill_score", 0) or 0,
-                final_score=getattr(analysis, "final_score", 0) or 0,
+                score=_score_to_percent(analysis.score),
+                education_score=_score_to_unit(getattr(analysis, "academic_score", 0) or 0),
+                academic_score=_score_to_unit(getattr(analysis, "academic_score", 0) or 0),
+                experience_score=_score_to_unit(getattr(analysis, "experience_score", 0) or 0),
+                skill_match_score=_score_to_unit(getattr(analysis, "skill_match_score", 0) or 0),
+                project_score=_score_to_unit(getattr(analysis, "project_score", 0) or 0),
+                soft_skill_score=_score_to_unit(getattr(analysis, "soft_skill_score", 0) or 0),
+                final_score=_score_to_unit(getattr(analysis, "final_score", 0) or analysis.score or 0),
                 top_skills=matched_skills[:3],
                 matched_skills=matched_skills,
                 missing_skills=missing_skills,
@@ -365,6 +460,7 @@ async def list_analysis_results(
                 experience_list=details["experience_list"],
                 projects=details["projects"],
                 certifications=details["certifications"],
+                awards=details["awards"],
             )
         )
 
@@ -445,8 +541,6 @@ async def run_analysis(
     results = []
     job_context = f"Role: {job.title}\nDescription: {job.description or ''}\nRequired Skills: {', '.join(job_skill_names)}"
 
-    import asyncio
-    
     async def process_one_resume(resume):
         r_id = resume.id
         resume_text = (resume.content_text or "")
@@ -466,27 +560,30 @@ async def run_analysis(
         existing_analysis = existing_analysis_by_person.get(person_key)
 
         try:
+            cgpa_value = _to_float(academic.get("cgpa"))
+            percentage_value = _to_float(academic.get("percentage"))
+            final_score_percent = _score_to_percent(analysis.get("score", analysis.get("final_score", 0)))
             payload = {
                 "job_id": job_id,
                 "resume_id": r_id,
-                "score": float(analysis.get("score", 0)),
-                "cgpa": academic.get("cgpa"),
-                "percentage": academic.get("percentage"),
-                "cgpa_or_percentage": academic.get("cgpa") or (academic.get("percentage", 0) / 10 if academic.get("percentage") else None),
+                "score": final_score_percent,
+                "cgpa": cgpa_value,
+                "percentage": percentage_value,
+                "cgpa_or_percentage": cgpa_value if cgpa_value is not None else (percentage_value / 10 if percentage_value is not None else None),
                 "education_degree": academic.get("degree"),
-                "academic_score": float(academic.get("academic_score", 0)),
-                "total_experience_years": float(exp.get("total_years") or 0),
-                "relevant_experience_years": float(exp.get("relevant_years") or 0),
-                "projects_count": int(exp.get("projects_count") or 0),
-                "experience_score": float(exp.get("experience_score", 0)),
-                "communication_score": float(soft.get("communication", 0)),
-                "leadership_score": float(soft.get("leadership", 0)),
-                "teamwork_score": float(soft.get("teamwork", 0)),
-                "problem_solving_score": float(soft.get("problem_solving", 0)),
-                "soft_skill_score": float(soft.get("soft_skill_score", 0)),
-                "skill_match_score": float(add.get("skill_match_score", 0)),
-                "project_score": float(add.get("project_score", 0)),
-                "final_score": float(analysis.get("score", 0)),
+                "academic_score": _score_to_unit(academic.get("academic_score", academic.get("education_score", 0))),
+                "total_experience_years": _to_float(exp.get("total_years")) or 0.0,
+                "relevant_experience_years": _to_float(exp.get("relevant_years")) or 0.0,
+                "projects_count": _to_int(exp.get("projects_count")) or 0,
+                "experience_score": _score_to_unit(exp.get("experience_score", analysis.get("experience_score", 0))),
+                "communication_score": _score_to_unit(soft.get("communication", 0)),
+                "leadership_score": _score_to_unit(soft.get("leadership", 0)),
+                "teamwork_score": _score_to_unit(soft.get("teamwork", 0)),
+                "problem_solving_score": _score_to_unit(soft.get("problem_solving", 0)),
+                "soft_skill_score": _score_to_unit(soft.get("soft_skill_score", analysis.get("soft_skills_score", 0))),
+                "skill_match_score": _score_to_unit(add.get("skill_match_score", analysis.get("skills_score", 0))),
+                "project_score": _score_to_unit(add.get("project_score", analysis.get("awards_projects_score", 0))),
+                "final_score": _score_to_unit(final_score_percent),
                 "matched_skills": Json(matched),
                 "missing_skills": Json(missing),
                 "soft_skills": Json(soft),
@@ -507,7 +604,7 @@ async def run_analysis(
             fallback_payload = {
                 "job_id": job_id,
                 "resume_id": r_id,
-                "score": float(analysis.get("score", 0)),
+                "score": _score_to_percent(analysis.get("score", analysis.get("final_score", 0))),
                 "matched_skills": Json(matched),
                 "missing_skills": Json(missing),
             }
@@ -521,7 +618,7 @@ async def run_analysis(
 
         existing_analysis_by_person[person_key] = saved_analysis
 
-        effective_score = float(getattr(saved_analysis, "score", 0) or 0)
+        effective_score = _score_to_percent(getattr(saved_analysis, "score", 0))
         is_auto_selected = auto_select_enabled and effective_score >= auto_select_threshold
         is_selected = is_auto_selected and not require_hr_confirmation
         selection_status = "pending" if (is_auto_selected and require_hr_confirmation) else ("confirmed" if is_auto_selected else "rejected")
@@ -538,24 +635,22 @@ async def run_analysis(
         return AnalysisResult(
             candidate_name=resolve_candidate_name(resume),
             score=effective_score,
-            education_score=float(getattr(saved_analysis, "academic_score", 0) or 0),
-            academic_score=float(getattr(saved_analysis, "academic_score", 0) or 0),
-            experience_score=float(getattr(saved_analysis, "experience_score", 0) or 0),
-            skill_match_score=float(getattr(saved_analysis, "skill_match_score", 0) or 0),
-            project_score=float(getattr(saved_analysis, "project_score", 0) or 0),
-            soft_skill_score=float(getattr(saved_analysis, "soft_skill_score", 0) or 0),
-            final_score=float(getattr(saved_analysis, "final_score", 0) or 0),
+            education_score=_score_to_unit(getattr(saved_analysis, "academic_score", 0)),
+            academic_score=_score_to_unit(getattr(saved_analysis, "academic_score", 0)),
+            experience_score=_score_to_unit(getattr(saved_analysis, "experience_score", 0)),
+            skill_match_score=_score_to_unit(getattr(saved_analysis, "skill_match_score", 0)),
+            project_score=_score_to_unit(getattr(saved_analysis, "project_score", 0)),
+            soft_skill_score=_score_to_unit(getattr(saved_analysis, "soft_skill_score", 0)),
+            final_score=_score_to_unit(getattr(saved_analysis, "final_score", effective_score)),
             matched_skills=matched,
             missing_skills=missing
         )
 
-    # Parallelize analysis for all resumes
-    tasks = [process_one_resume(r) for r in unique_resume_by_person.values()]
-    if tasks:
-        results = await asyncio.gather(*tasks)
-    else:
-        results = []
-        
+    # Process resumes sequentially to preserve request stability.
+    results = []
+    for resume in unique_resume_by_person.values():
+        results.append(await process_one_resume(resume))
+
     return results
 
 
@@ -595,7 +690,7 @@ async def confirm_auto_selection(
         if requested_filter and resume.id not in requested_filter:
             continue
 
-        score = float(getattr(analysis, "score", 0) or 0)
+        score = _score_to_percent(getattr(analysis, "score", 0))
         if score < threshold:
             continue
 
@@ -630,14 +725,14 @@ async def get_job_analysis(job_id: str, db: Prisma = Depends(get_db)):
     return [
         AnalysisResult(
             candidate_name=resolve_candidate_name(a.resume),
-            score=a.score,
-            education_score=getattr(a, "academic_score", 0) or 0,
-            academic_score=getattr(a, "academic_score", 0) or 0,
-            experience_score=getattr(a, "experience_score", 0) or 0,
-            skill_match_score=getattr(a, "skill_match_score", 0) or 0,
-            project_score=getattr(a, "project_score", 0) or 0,
-            soft_skill_score=getattr(a, "soft_skill_score", 0) or 0,
-            final_score=getattr(a, "final_score", 0) or 0,
+            score=_score_to_percent(a.score),
+            education_score=_score_to_unit(getattr(a, "academic_score", 0) or 0),
+            academic_score=_score_to_unit(getattr(a, "academic_score", 0) or 0),
+            experience_score=_score_to_unit(getattr(a, "experience_score", 0) or 0),
+            skill_match_score=_score_to_unit(getattr(a, "skill_match_score", 0) or 0),
+            project_score=_score_to_unit(getattr(a, "project_score", 0) or 0),
+            soft_skill_score=_score_to_unit(getattr(a, "soft_skill_score", 0) or 0),
+            final_score=_score_to_unit(getattr(a, "final_score", 0) or a.score or 0),
             matched_skills=resolve_skill_arrays(a)[0],
             missing_skills=resolve_skill_arrays(a)[1]
         ) for a in analyses

@@ -32,7 +32,7 @@ async def preview_extract(
     if not text:
         return CandidatePreviewExtractResponse(skills=[], keywords=[], readability="poor")
         
-    skills = list(nlp_service.extract_skills(text))[:12]
+    skills = list(await nlp_service.extract_skills(text))[:12]
     # Simple heuristic for readability as LLM might be overkill for just a label
     word_count = len(text.split())
     readability = "good" if word_count > 50 else "average" if word_count > 10 else "poor"
@@ -52,7 +52,7 @@ async def suggest_skills(
     if not payload.text:
         return CandidateSkillSuggestionResponse(suggestions=[])
         
-    skills = list(nlp_service.extract_skills(payload.text))
+    skills = list(await nlp_service.extract_skills(payload.text))
     return CandidateSkillSuggestionResponse(
         suggestions=[SkillSuggestion(name=s, confidence="high") for s in skills[:10]]
     )
@@ -83,8 +83,8 @@ async def enrich_candidate_profile(
     if analyses:
         role_title = getattr(getattr(analyses[0], "job", None), "title", None)
 
-    # Use Gemini for deep insights
-    insights_data = nlp_service.get_professional_insights(combined_text, role_title)
+    # Use OpenRouter for deep insights
+    insights_data = await nlp_service.get_professional_insights(combined_text, role_title)
     
     def _get_dim(key: str) -> Dict:
         # Gemini might use different casing, let's be robust
@@ -111,7 +111,7 @@ async def enrich_candidate_profile(
         domain_score=domain.get("score", 0),
         learning_score=learn.get("score", 0),
         stability_score=stab.get("score", 0),
-        keywords=list(nlp_service.extract_skills(combined_text))[:20],
+        keywords=list(await nlp_service.extract_skills(combined_text))[:20],
         experience_signals=[], # Legacy field
         education_signals=[], # Legacy field
         certifications=[], # Legacy field

@@ -7,9 +7,11 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "AI HR Copilot"
     API_V1_STR: str = "/api/v1"
     
-    # Ollama API
-    OLLAMA_BASE_URL: str = "http://localhost:11434"
-    OLLAMA_MODEL: str = "qwen2.5-coder:7b"
+    # OpenRouter API
+    OPENROUTER_API_KEY: str = ""
+    OPENROUTER_MODEL: str = "meta-llama/llama-3.1-8b-instruct"
+    OPENROUTER_API_URL: str = "https://openrouter.ai/api/v1/chat/completions"
+    OPENROUTER_TIMEOUT: float = 30.0
     
     # Database
     DATABASE_URL: str

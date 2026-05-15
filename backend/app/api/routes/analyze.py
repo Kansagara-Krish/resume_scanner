@@ -63,7 +63,7 @@ async def analyze_jd(
         )
         if not resume: continue
         
-        analysis = nlp_service.analyze_candidate(
+        analysis = await nlp_service.analyze_candidate(
             resume.content_text, 
             job_description,
             model_type=request.model_type
@@ -83,11 +83,24 @@ async def analyze_jd(
         results.append({
             "id": candidate.id,
             "full_name": candidate.full_name,
-            "score": analysis["score"],
-            "breakdown": analysis["breakdown"],
-            "skills": analysis["skills"],
-            "matching_skills": analysis["matching_skills"],
-            "missing_skills": analysis["missing_skills"]
+            "score": analysis.get("score", 0.0),
+            "final_score": analysis.get("final_score", analysis.get("score", 0.0)),
+            "skills_score": analysis.get("skills_score", 0.0),
+            "experience_score": analysis.get("experience_score", 0.0),
+            "education_score": analysis.get("education_score", 0.0),
+            "semantic_score": analysis.get("semantic_score", 0.0),
+            "certifications_score": analysis.get("certifications_score", 0.0),
+            "awards_projects_score": analysis.get("awards_projects_score", 0.0),
+            "soft_skills_score": analysis.get("soft_skills_score", 0.0),
+            "matched_keywords": analysis.get("matched_keywords", []),
+            "missing_keywords": analysis.get("missing_keywords", []),
+            "strengths": analysis.get("strengths", []),
+            "weaknesses": analysis.get("weaknesses", []),
+            "improvement_suggestions": analysis.get("improvement_suggestions", []),
+            "skills": analysis.get("skills", []),
+            "matching_skills": analysis.get("matching_skills", []),
+            "missing_skills": analysis.get("missing_skills", []),
+            "breakdown": analysis.get("breakdown", "")
         })
 
     # Sort results

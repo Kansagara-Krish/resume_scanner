@@ -14,26 +14,19 @@ BASE_URL = "http://localhost:8000"
 TEST_USER_ID = "da031c1b-e721-4966-80e9-21c5dc58c7c4"
 RESUME_PATH = "/disk1/temp/resume-scanner/testing_data/Resume - Excellent.pdf"
 
-async def check_ollama():
-    print("Checking Ollama status...")
-    try:
-        async with httpx.AsyncClient(timeout=5.0) as client:
-            resp = await client.get("http://localhost:11434/api/tags")
-            if resp.status_code == 200:
-                print("SUCCESS: Ollama is running.")
-                models = [m['name'] for m in resp.json().get('models', [])]
-                print(f"Available models: {models}")
-                return True
-            else:
-                print(f"WARNING: Ollama returned {resp.status_code}")
-                return False
-    except Exception as e:
-        print(f"ERROR: Ollama connection failed: {e}")
+async def check_openrouter():
+    print("Checking OpenRouter API key...")
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        print("ERROR: OPENROUTER_API_KEY is not configured.")
         return False
 
+    print("OPENROUTER_API_KEY found. Proceeding with backend verification.")
+    return True
+
 async def verify_backend():
-    if not await check_ollama():
-        print("STOPPING: Ollama is essential for backend functionality.")
+    if not await check_openrouter():
+        print("STOPPING: OpenRouter API key is required for backend functionality.")
         return
 
     # 1. Generate Token

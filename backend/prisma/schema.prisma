@@ -70,6 +70,10 @@ model Resume {
   parsed_data       Json?
   content_text      String
   uploaded_by       String
+  processing_status String    @default("uploaded")
+  processing_started_at DateTime?
+  processing_completed_at DateTime?
+  error_message     String?
   auto_selected     Boolean   @default(false)
   selected          Boolean   @default(false)
   selection_status  String    @default("rejected")

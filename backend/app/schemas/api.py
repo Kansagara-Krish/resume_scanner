@@ -98,11 +98,20 @@ class JobSkillSimple(BaseModel):
 class JobRoleDetail(JobRoleSimple):
     skills: List[JobSkillSimple] = []
 
+class SuggestSkillsRequest(BaseModel):
+    """Request body for suggesting skills for a job role."""
+    role_title: str
+    role_description: Optional[str] = None
+
 # Resume & Analysis
 class ResumeSimple(BaseModel):
     id: str
     file_name: str
     uploaded_by: str
+    processing_status: Optional[str] = None
+    processing_started_at: Optional[datetime] = None
+    processing_completed_at: Optional[datetime] = None
+    error_message: Optional[str] = None
     created_at: datetime
     class Config:
         from_attributes = True
@@ -172,6 +181,7 @@ class AnalysisResultCard(BaseModel):
     experience_list: List[ExperienceEntry] = []
     projects: List[str] = []
     certifications: List[str] = []
+    awards: List[str] = []
 
 # Chat
 class ChatMessageBase(BaseModel):
@@ -202,9 +212,30 @@ class AnalyzeResponse(BaseModel):
 
 class ResumeUploadResponse(BaseModel):
     filename: str
-    drive_id: str
+    drive_id: str = ""
     candidate_id: str
-    extracted_text: str
+    extracted_text: str = ""
+    id: Optional[str] = None
+    name: Optional[str] = None
+    status: Optional[str] = None
+
+
+class ResumeStatusResponse(BaseModel):
+    resume_id: str
+    status: Literal["uploaded", "processing", "analyzed", "failed"]
+    stage: Optional[str] = None
+    error_message: Optional[str] = None
+    processing_started_at: Optional[str] = None
+    processing_completed_at: Optional[str] = None
+
+
+class ResumeResultResponse(BaseModel):
+    resume_id: str
+    status: Literal["uploaded", "processing", "analyzed", "failed"]
+    stage: Optional[str] = None
+    candidate_score: Optional[float] = None
+    parsed_data: Dict[str, Any] = {}
+    error_message: Optional[str] = None
 
 class CandidateDetail(BaseModel):
     id: str

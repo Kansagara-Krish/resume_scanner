@@ -33,7 +33,8 @@ async def fetch_gmail_resumes(
         
         # 1. Extract Text
         extracted_text = nlp_service.extract_text_from_bytes(content, filename)
-        if not extracted_text: continue
+        if not extracted_text:
+            continue
         
         # 2. Upload to GDrive
         drive_id = drive_service.upload_file(content, filename, mimetype) or "placeholder"
@@ -47,7 +48,7 @@ async def fetch_gmail_resumes(
             candidate = await db.candidate.create(
                 data={
                     "full_name": candidate_name,
-                    "skills": list(nlp_service.extract_skills(extracted_text))
+                    "skills": list(await nlp_service.extract_skills(extracted_text))
                 }
             )
             new_candidates += 1

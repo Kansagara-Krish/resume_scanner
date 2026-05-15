@@ -1,4 +1,5 @@
 import uvicorn
+import asyncio
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.db.session import connect_db, disconnect_db
@@ -40,10 +41,14 @@ app.add_middleware(
 # Lifecycle events
 @app.on_event("startup")
 async def on_startup():
+    """Initialize database on application startup."""
     await connect_db()
+    print("✅ Backend started.")
+
 
 @app.on_event("shutdown")
 async def on_shutdown():
+    """Cleanup: disconnect database on application shutdown."""
     await disconnect_db()
 
 # Main app routes

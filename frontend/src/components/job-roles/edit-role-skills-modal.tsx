@@ -366,7 +366,7 @@ export function EditRoleSkillsModal({ role, isOpen, onClose, onSave }: EditRoleS
               >
                 + Add Skill
               </button>
-              <span className="whitespace-nowrap rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-[var(--app-muted)]">
+              <span className="whitespace-nowrap rounded-full bg-[var(--app-surface-soft)] px-3 py-1 text-xs font-semibold text-[var(--app-muted)]">
                 {selectedCount} selected
               </span>
             </div>

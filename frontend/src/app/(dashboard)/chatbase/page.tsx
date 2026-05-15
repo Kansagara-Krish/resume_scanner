@@ -4,7 +4,7 @@ import { ChangeEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, LogOut, Mail, MessageSquarePlus, PanelLeft, Rocket, Settings, User as UserIcon } from 'lucide-react';
-import { getCandidates, getJobById, runAnalysisForResumes, shortlistCandidate, uploadResumes } from '@/lib/api';
+import { getCandidates, getJobById, runAnalysisForResumes, shortlistCandidate, uploadResumes, waitForResumeProcessing, stopOllama } from '@/lib/api';
 import { CandidateDetailData, CandidateDetailModal } from '@/components/analyze/CandidateDetailModal';
 import { AnalysisButton } from '@/components/chat/analysis-button';
 import { ConfirmModal } from '@/components/chat/confirm-modal';
@@ -150,7 +150,6 @@ const hydrateSessions = (raw: unknown): ChatSession[] => {
         ? item.results
             .map((result: any, index: number) => ({
               rank: Number(result?.rank) || index + 1,
-              candidate_name: String(result?.candidate_name || 'Unknown candidate'),
               match_score: Number(result?.match_score ?? 0),
               top_skills: Array.isArray(result?.top_skills)
                 ? result.top_skills.filter((skill: unknown) => typeof skill === 'string')
@@ -254,6 +253,105 @@ const normalizeSkillToken = (value: string) => {
   return aliasMap[normalized] || normalized;
 };
 
+const PROGRESS_WIDTH_CLASSES: Record<number, string> = {
+  0: 'w-0',
+  5: 'w-[5%]',
+  10: 'w-[10%]',
+  15: 'w-[15%]',
+  20: 'w-[20%]',
+  25: 'w-[25%]',
+  30: 'w-[30%]',
+  35: 'w-[35%]',
+  40: 'w-[40%]',
+  45: 'w-[45%]',
+  50: 'w-[50%]',
+  55: 'w-[55%]',
+  60: 'w-[60%]',
+  65: 'w-[65%]',
+  70: 'w-[70%]',
+  75: 'w-[75%]',
+  80: 'w-[80%]',
+  85: 'w-[85%]',
+  90: 'w-[90%]',
+  95: 'w-[95%]',
+  100: 'w-full',
+};
+
+const getProgressWidthClass = (percentage: number) => {
+  const safePercentage = Math.min(100, Math.max(0, Math.round(percentage)));
+  const bucket = Math.min(100, Math.max(0, Math.round(safePercentage / 5) * 5));
+  return PROGRESS_WIDTH_CLASSES[bucket] || 'w-0';
+};
+
+type ProcessingCopy = {
+  title: string;
+  subtitle: string;
+  detail: string;
+  badge: string;
+};
+
+const getProcessingCopy = (
+  phase: 'idle' | 'uploading' | 'processing' | 'completed' | 'failed',
+  stage: string,
+  processed: number,
+  total: number,
+): ProcessingCopy => {
+  const normalizedStage = stage.trim().toLowerCase();
+  const totalLabel = `${processed} of ${total} resumes`;
+
+  if (phase === 'uploading') {
+    return {
+      title: 'Uploading resumes',
+      subtitle: 'Saving files before the background AI pipeline starts.',
+      detail: total > 0 ? totalLabel : 'Preparing upload batch',
+      badge: 'Upload phase',
+    };
+  }
+
+  if (phase === 'failed') {
+    return {
+      title: 'Processing paused',
+      subtitle: 'One or more resumes could not complete the AI pipeline.',
+      detail: stage || 'Review the error message and try again.',
+      badge: 'Failed',
+    };
+  }
+
+  if (normalizedStage.includes('parsing')) {
+    return {
+      title: 'Parsing resume text',
+      subtitle: 'Reading PDF, DOCX, and TXT content into structured text.',
+      detail: totalLabel,
+      badge: 'Parsing',
+    };
+  }
+
+  if (normalizedStage.includes('analysis') || normalizedStage.includes('ai') || normalizedStage.includes('ollama')) {
+    return {
+      title: 'Running AI analysis',
+      subtitle: 'Extracting profile signals and candidate insights in the background.',
+      detail: totalLabel,
+      badge: 'AI stage',
+    };
+  }
+
+  if (normalizedStage.includes('complete')) {
+    return {
+      title: 'Finalizing results',
+      subtitle: 'Saving the analyzed resumes and preparing ranking output.',
+      detail: totalLabel,
+      badge: 'Wrapping up',
+    };
+  }
+
+  return {
+    title: 'Deep AI Analysis',
+    subtitle: stage || 'AI analysis is evaluating candidate fit in the background.',
+    detail: total > 0 ? totalLabel : 'Working through the resume batch',
+    badge: phase === 'processing' ? 'Processing' : 'Working',
+  };
+};
+
 export default function ChatbasePage() {
   const router = useRouter();
   const setupFileInputRef = useRef<HTMLInputElement | null>(null);
@@ -283,6 +381,7 @@ export default function ChatbasePage() {
     percentage: 0 as number,
   });
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isStopConfirmOpen, setIsStopConfirmOpen] = useState(false);
   const [showAllCandidates, setShowAllCandidates] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<CandidateDetailData | null>(null);
   const [liveCandidateIds, setLiveCandidateIds] = useState<string[]>([]);
@@ -297,6 +396,7 @@ export default function ChatbasePage() {
   const [selectionSubmitting, setSelectionSubmitting] = useState(false);
   const [storageReady, setStorageReady] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
+  const analysisCancelledRef = useRef(false);
   const liveJobs = useMemo(
     () => jobs.map((job: any) => ({ id: String(job.id), title: String(job.title) })),
     [jobs]
@@ -306,6 +406,13 @@ export default function ChatbasePage() {
     [jobs, selectedJobId]
   );
   const selectedJobTitle = selectedJobConfig?.title || '';
+  const processingStage = (statusMessage || uploadMetrics.currentFile || '').trim();
+  const processingCopy = getProcessingCopy(
+    uploadMetrics.phase,
+    processingStage,
+    uploadMetrics.processed,
+    uploadMetrics.total || selectedFiles.length,
+  );
 
   useEffect(() => {
     setCurrentUser(getStoredUser());
@@ -397,7 +504,7 @@ export default function ChatbasePage() {
     setActiveChatId(fresh.id);
     setSelectedJobId('');
     setSelectedFiles([]);
-    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle' });
+    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle', currentFile: '', percentage: 0 });
     setStatusMessage(null);
     setError(null);
     setEditingChatId(null);
@@ -481,7 +588,7 @@ export default function ChatbasePage() {
     setActiveChatId(next.id);
     setSelectedJobId('');
     setSelectedFiles([]);
-    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle' });
+    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle', currentFile: '', percentage: 0 });
     setShowAllCandidates(false);
     setIsDetailModalOpen(false);
     setSelectedCandidate(null);
@@ -503,7 +610,7 @@ export default function ChatbasePage() {
     setSidebarOpen(false);
     setSelectedJobId(selected?.selected_job_id || '');
     setSelectedFiles([]);
-    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle' });
+    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle', currentFile: '', percentage: 0 });
     setShowAllCandidates(false);
     setIsDetailModalOpen(false);
     setSelectedCandidate(null);
@@ -527,7 +634,7 @@ export default function ChatbasePage() {
       setActiveChatId(undefined);
       setSelectedJobId('');
       setSelectedFiles([]);
-      setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle' });
+      setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle', currentFile: '', percentage: 0 });
     }
 
     setEditingChatId((prev) => (prev === chatToDelete ? null : prev));
@@ -592,13 +699,30 @@ export default function ChatbasePage() {
 
   const handleClearAllSetupFiles = () => {
     setSelectedFiles([]);
-    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle' });
+    setUploadMetrics({ total: 0, processed: 0, success: 0, failed: 0, phase: 'idle', currentFile: '', percentage: 0 });
+  };
+
+  const handleStopAnalysis = async () => {
+    analysisCancelledRef.current = true;
+    setStatusMessage('Stopping AI analysis...');
+
+    try {
+      await stopOllama();
+      setStatusMessage('AI analysis stopped. Analysis halted.');
+    } catch {
+      setStatusMessage('Failed to stop AI analysis. Check server logs.');
+    } finally {
+      setUploading(false);
+      setSending(false);
+    }
   };
 
   const runResumeAnalysis = async () => {
     if (!activeSession || !selectedJobId || selectedFiles.length === 0) {
       return;
     }
+
+    analysisCancelledRef.current = false;
 
     setShowAllCandidates(false);
     setError(null);
@@ -610,6 +734,8 @@ export default function ChatbasePage() {
       success: 0,
       failed: 0,
       phase: 'uploading',
+      currentFile: '',
+      percentage: 0,
     });
     setStatusMessage('Analyzing resumes...');
 
@@ -648,6 +774,10 @@ export default function ChatbasePage() {
         },
       });
 
+      if (analysisCancelledRef.current) {
+        return;
+      }
+
       mutateActiveSession((session) => ({
         ...session,
         uploads: [...uploaded, ...session.uploads],
@@ -657,6 +787,10 @@ export default function ChatbasePage() {
       setUploadMetrics((prev) => ({ ...prev, phase: 'processing', failed: 0 }));
 
       const latestJob = await getJobById(selectedJobId).catch(() => selectedJobConfig);
+
+      if (analysisCancelledRef.current) {
+        return;
+      }
 
       if (!latestJob?.id) {
         throw new Error('Selected job role is not available for analysis. Please reselect and try again.');
@@ -684,7 +818,42 @@ export default function ChatbasePage() {
         throw new Error('Uploaded resumes could not be identified for analysis. Please try uploading again.');
       }
 
-      const analysisResults = await runAnalysisForResumes(String(latestJob.id), uploadedIds);
+      const processingOutcome = await waitForResumeProcessing(uploadedIds, {
+        pollIntervalMs: 2500,
+        timeoutMs: 10 * 60 * 1000,
+        onUpdate: (statuses) => {
+          const total = statuses.length;
+          const success = statuses.filter((item) => item.status === 'analyzed').length;
+          const failed = statuses.filter((item) => item.status === 'failed').length;
+          const processed = success + failed;
+          const active = statuses.find((item) => item.status === 'processing' || item.status === 'uploaded');
+
+          setUploadMetrics((prev) => ({
+            ...prev,
+            total,
+            processed,
+            success,
+            failed,
+            phase: 'processing',
+            currentFile: active?.stage || '',
+            percentage: total > 0 ? Math.min(99, (processed / total) * 100) : prev.percentage,
+          }));
+
+          if (active?.stage) {
+            setStatusMessage(`${active.stage} • ${processed}/${total} processed`);
+          }
+        },
+      });
+
+      if (processingOutcome.analyzedIds.length === 0) {
+        throw new Error('All uploaded resumes failed during background AI processing. Please verify file quality and try again.');
+      }
+
+      const analysisResults = await runAnalysisForResumes(String(latestJob.id), processingOutcome.analyzedIds);
+      if (analysisCancelledRef.current) {
+        return;
+      }
+
       const allCandidates = await getCandidates().catch(() => [] as any[]);
       const candidatesByNormalizedName = new Map<string, string>();
       const candidateMetaByNormalizedName = new Map<string, any>();
@@ -783,6 +952,11 @@ export default function ChatbasePage() {
         failed: 0,
       }));
     } catch (err) {
+      if (analysisCancelledRef.current) {
+        setError(null);
+        return;
+      }
+
       const messageText = err instanceof Error ? err.message : 'Analysis failed.';
       setError(messageText);
       setUploadMetrics((prev) => ({
@@ -798,7 +972,9 @@ export default function ChatbasePage() {
     } finally {
       setUploading(false);
       setSending(false);
-      setStatusMessage(null);
+      if (!analysisCancelledRef.current) {
+        setStatusMessage(null);
+      }
     }
   };
 
@@ -1018,6 +1194,8 @@ export default function ChatbasePage() {
             : item
         ),
       }));
+
+      console.log('Shortlist response:', response);
 
       if (sendSelectionEmail) {
         const sent = Boolean(response?.email_sent);
@@ -1269,6 +1447,15 @@ export default function ChatbasePage() {
                   loading={sending || uploading}
                   onClick={runResumeAnalysis}
                 />
+                {uploadMetrics.phase === 'processing' && (
+                  <button
+                    type="button"
+                    onClick={() => setIsStopConfirmOpen(true)}
+                    className="ml-3 inline-flex items-center gap-2 rounded-lg border border-[var(--app-border)] bg-white px-3 py-1 text-sm font-medium text-[var(--app-text)] hover:bg-[var(--app-surface-soft)]"
+                  >
+                    Stop
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -1365,45 +1552,60 @@ export default function ChatbasePage() {
 
       {sending && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/60 backdrop-blur-md transition-all duration-300">
-          <div className="flex flex-col items-center gap-6 text-center max-w-md p-8 bg-white rounded-3xl shadow-2xl border border-slate-100">
+          <div className="flex max-w-md flex-col items-center gap-6 rounded-3xl border border-slate-100 bg-white p-8 text-center shadow-2xl">
             <div className="relative">
               <div className="h-20 w-20 animate-spin rounded-full border-b-4 border-indigo-600"></div>
               <div className="absolute inset-0 flex items-center justify-center">
-                <Rocket className="h-8 w-8 text-indigo-600 animate-bounce" />
+                <Rocket className="h-8 w-8 animate-bounce text-indigo-600" />
               </div>
             </div>
-            
-            <div className="space-y-2">
-              <h3 className="text-2xl font-bold text-slate-800">Deep AI Analysis</h3>
-              <p className="text-indigo-600 font-medium animate-pulse">Ollama is evaluating candidate fit...</p>
-              <p className="text-slate-500 text-sm italic">This may take 1-2 minutes for large datasets</p>
+
+            <div className="space-y-3">
+              <div className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.18em] text-indigo-700">
+                {processingCopy.badge}
+              </div>
+              <h3 className="text-2xl font-bold text-slate-800">{processingCopy.title}</h3>
+              <p className="font-medium text-indigo-600 animate-pulse">{processingCopy.subtitle}</p>
+              <p className="text-sm italic text-slate-500">{processingCopy.detail}</p>
             </div>
-            
+
             <div className="w-full space-y-3">
-              <div className="flex justify-between text-xs font-bold text-slate-600 uppercase tracking-widest">
+              <div className="flex justify-between text-xs font-bold uppercase tracking-widest text-slate-600">
                 <span>Progress</span>
                 <span>{Math.round(uploadMetrics.percentage)}%</span>
               </div>
-              <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                <div 
-                  className="h-full bg-gradient-to-r from-indigo-600 to-violet-600 transition-all duration-700 rounded-full"
-                  style={{ width: `${uploadMetrics.percentage}%` }}
+              <div className="h-3 w-full overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+                <div
+                  className={`h-full rounded-full bg-gradient-to-r from-indigo-600 to-violet-600 transition-all duration-700 ${getProgressWidthClass(uploadMetrics.percentage)}`}
                 ></div>
               </div>
               <div className="flex flex-col gap-1">
                 <p className="text-sm font-semibold text-slate-700">
                   Processed {uploadMetrics.processed} of {uploadMetrics.total || selectedFiles.length} resumes
                 </p>
-                {uploadMetrics.currentFile && (
-                  <p className="text-xs text-indigo-500 animate-pulse truncate max-w-full">
-                    Current: {uploadMetrics.currentFile}
+                {processingStage ? (
+                  <p className="max-w-full truncate text-xs text-indigo-500 animate-pulse">
+                    {processingStage}
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
           </div>
         </div>
       )}
+      <ConfirmModal
+        isOpen={isStopConfirmOpen}
+        onClose={() => setIsStopConfirmOpen(false)}
+        onConfirm={() => {
+          setIsStopConfirmOpen(false);
+          handleStopAnalysis();
+        }}
+        title="Stop AI analysis?"
+        message="Are you sure you want to stop the AI analysis? This will halt the active analysis run."
+        confirmLabel="Stop AI analysis"
+        confirmTone="danger"
+      />
+
     </div>
   );
 }

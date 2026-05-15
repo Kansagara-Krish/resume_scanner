@@ -6,11 +6,9 @@ from typing import Any, Dict, List, Optional
 import re
 from datetime import datetime
 from prisma import Json
-from app.services.nlp_service import NLPService
 from app.services.auth_mailer import send_candidate_selection_email
 
 router = APIRouter()
-nlp_service = NLPService()
 
 def _format_name_from_filename(file_name: str) -> str:
     stem = file_name.rsplit('.', 1)[0]
@@ -32,19 +30,18 @@ def _extract_shortlist_entries(parsed: Dict[str, Any]) -> List[Dict[str, Any]]:
         return []
     return [item for item in entries if isinstance(item, dict)]
 
-def _resume_to_candidate_payload(resume: Any) -> Dict[str, Any]:
+async def _resume_to_candidate_payload(resume: Any) -> Dict[str, Any]:
     """
     Transforms a Resume DB object into a Candidate profile payload.
-    Relies on the high-quality Gemini-parsed data in 'parsed_data'.
+    Uses stored parsed_data only so normal dashboard reads never trigger
+    extra AI work or slow down page loading.
     """
     parsed = _safe_dict(getattr(resume, 'parsed_data', {}))
-    content_text = getattr(resume, 'content_text', '')
     
-    # If parsed_data is empty (legacy or failed initial parse), try one-time enrichment
-    if not parsed and content_text:
-        parsed = nlp_service.extract_candidate_profile(content_text, resume.file_name)
-        # Note: We don't save back to DB here to keep GET requests idempotent, 
-        # but in a real app, you might want to update the record.
+    # Keep list/read requests cheap and deterministic.
+    # Resume upload already performs the extraction and stores parsed_data.
+    # If legacy records are missing parsed_data, fall back to filename-based
+    # placeholders instead of invoking additional AI work during dashboard load.
 
     analyses = getattr(resume, 'analyses', None) or []
     shortlist_entries = _extract_shortlist_entries(parsed)
@@ -107,7 +104,7 @@ async def list_candidates(
     if shortlisted is True:
         resumes = [r for r in resumes if len(_extract_shortlist_entries(_safe_dict(getattr(r, 'parsed_data', {})))) > 0]
 
-    return [_resume_to_candidate_payload(r) for r in resumes]
+    return [await _resume_to_candidate_payload(r) for r in resumes]
 
 @router.get("/{candidate_id}")
 async def get_candidate(
@@ -121,7 +118,22 @@ async def get_candidate(
     )
     if not resume or getattr(resume, 'is_deleted', False):
         raise HTTPException(status_code=404, detail="Candidate not found")
-    return _resume_to_candidate_payload(resume)
+    return await _resume_to_candidate_payload(resume)
+
+@router.delete("/bulk/delete")
+async def bulk_delete_candidates(
+    current_user=Depends(get_current_user),
+    db: Prisma = Depends(get_db),
+):
+    """Marks all non-deleted resumes uploaded by the current user as deleted."""
+    await db.resume.update_many(
+        where={
+            'uploaded_by': current_user.id,
+            'is_deleted': False
+        },
+        data={'is_deleted': True}
+    )
+    return {'message': 'All candidates deleted successfully'}
 
 @router.delete("/{candidate_id}")
 async def delete_candidate(
@@ -177,17 +189,29 @@ async def shortlist_candidate(
         },
     )
 
-    if payload.get('send_selection_email'):
-        email = parsed.get('email')
-        if email:
-            await send_candidate_selection_email(
-                to_email=email,
-                full_name=parsed.get('full_name'),
-                role_title=role.title,
-                selection_type=selection_type,
-            )
+    email_sent = False
+    try:
+        if payload.get('send_selection_email'):
+            email = parsed.get('email')
+            if email:
+                email_sent = await send_candidate_selection_email(
+                    to_email=email,
+                    full_name=parsed.get('full_name'),
+                    role_title=role.title,
+                    selection_type=selection_type,
+                )
+            else:
+                print(f"DEBUG: No email found in parsed_data for candidate {candidate_id}")
+    except Exception as e:
+        print(f"DEBUG: Error in shortlist_candidate email logic: {e}")
 
-    return {'status': 'ok', 'is_shortlisted': True}
+    print(f"DEBUG: Shortlist candidate {candidate_id}, final email_sent={email_sent}")
+    return {
+        'status': 'ok', 
+        'is_shortlisted': True, 
+        'email_sent': bool(email_sent),
+        'v': '2.1'
+    }
 
 @router.delete("/{candidate_id}/shortlist")
 async def unshortlist_candidate(

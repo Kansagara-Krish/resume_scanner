@@ -95,6 +95,13 @@ export const useDeleteJob = () => {
   });
 };
 
+export const useSuggestSkillsForRole = () => {
+  return useMutation({
+    mutationFn: ({ roleTitle, roleDescription }: { roleTitle: string; roleDescription?: string }) =>
+      api.suggestSkillsForRole(roleTitle, roleDescription || ''),
+  });
+};
+
 // Resumes
 export const useResumes = () => {
   return useQuery({
@@ -153,6 +160,19 @@ export const useDeleteCandidate = () => {
       }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['candidates'] });
+    },
+  });
+};
+
+export const useBulkDeleteCandidates = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: api.deleteCandidatesBulk,
+    onSuccess: () => {
+      queryClient.setQueryData(['candidates', 'all', 'unset'], []);
+      queryClient.setQueryData(['candidates', 'all', 'true'], []);
+      queryClient.setQueryData(['candidates', 'all', 'false'], []);
       queryClient.invalidateQueries({ queryKey: ['candidates'] });
     },
   });

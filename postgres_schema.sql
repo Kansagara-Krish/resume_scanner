@@ -167,6 +167,10 @@ ALTER TABLE job_roles ADD COLUMN IF NOT EXISTS require_hr_confirmation BOOLEAN N
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS auto_selected BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS selected BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE resumes ADD COLUMN IF NOT EXISTS selection_status VARCHAR(30) NOT NULL DEFAULT 'rejected';
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS processing_status VARCHAR(30) NOT NULL DEFAULT 'uploaded';
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS processing_started_at TIMESTAMP;
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS processing_completed_at TIMESTAMP;
+ALTER TABLE resumes ADD COLUMN IF NOT EXISTS error_message TEXT;
 
 -- -----------------------------------------------------------------------------
 -- Chat System

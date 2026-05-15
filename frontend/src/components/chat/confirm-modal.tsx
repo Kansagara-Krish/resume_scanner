@@ -1,7 +1,7 @@
 'use client';
 
-import { ReactNode, useEffect, useMemo, useRef, useState } from 'react';
-import { Trash2, AlertTriangle } from 'lucide-react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
+import { Trash2, AlertTriangle, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 type ConfirmModalProps = {
@@ -15,6 +15,7 @@ type ConfirmModalProps = {
   children?: ReactNode;
   confirmDisabled?: boolean;
   cancelDisabled?: boolean;
+  confirmTone?: 'danger' | 'success' | 'info';
 };
 
 const ANIMATION_MS = 200;
@@ -42,6 +43,7 @@ export function ConfirmModal({
   children,
   confirmDisabled = false,
   cancelDisabled = false,
+  confirmTone = 'danger',
 }: ConfirmModalProps) {
   const [isRendered, setIsRendered] = useState(isOpen);
   const [isClosing, setIsClosing] = useState(false);
@@ -126,14 +128,14 @@ export function ConfirmModal({
     };
   }, [isRendered, onClose]);
 
-  const dialogStateClasses = useMemo(() => {
+  const dialogStateClasses = (() => {
     const base = 'rounded-xl shadow-lg border border-[var(--app-border)] bg-[var(--app-surface-elevated)]';
     if (isOpen && !isClosing) {
       return `${base} opacity-100 scale-100`;
     }
 
     return `${base} opacity-0 scale-95`;
-  }, [isOpen, isClosing]);
+  })();
 
   if (!isRendered) {
     return null;
@@ -141,9 +143,39 @@ export function ConfirmModal({
 
   const resolvedConfirmIcon = confirmIcon === undefined ? <Trash2 className="h-4 w-4" /> : confirmIcon;
 
+  const toneConfig = (() => {
+    switch (confirmTone) {
+      case 'success':
+        return {
+          ring: 'ring-emerald-300',
+          border: 'border-emerald-400/30',
+          bg: 'bg-emerald-400/10',
+          text: 'text-emerald-300',
+          icon: <Check className="h-5 w-5" />,
+        };
+      case 'info':
+        return {
+          ring: 'ring-sky-300',
+          border: 'border-sky-400/30',
+          bg: 'bg-sky-400/10',
+          text: 'text-sky-300',
+          icon: <MailIconFallback />,
+        };
+      case 'danger':
+      default:
+        return {
+          ring: 'ring-red-300',
+          border: 'border-red-400/30',
+          bg: 'bg-red-400/10',
+          text: 'text-red-300',
+          icon: <AlertTriangle className="h-5 w-5" />,
+        };
+    }
+  })();
+
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm px-4 transition-opacity duration-200 ease-out ${
+      className={`fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 backdrop-blur-md px-4 transition-opacity duration-200 ease-out ${
         isOpen && !isClosing ? 'opacity-100' : 'opacity-0'
       }`}
     >
@@ -156,9 +188,9 @@ export function ConfirmModal({
         className={`w-full max-w-[380px] ${dialogStateClasses} transform p-5 transition-all duration-200 ease-out`}
       >
         <div className="flex items-start gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-red-200 bg-red-50 text-red-500">
-            <AlertTriangle className="h-5 w-5" />
-          </div>
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${toneConfig.border} ${toneConfig.bg} ${toneConfig.text}`}>
+              {toneConfig.icon}
+            </div>
           <div className="min-w-0">
             <h2 id="confirm-modal-title" className="text-base font-semibold text-[var(--app-text)]">
               {title}
@@ -175,12 +207,26 @@ export function ConfirmModal({
           <Button ref={cancelButtonRef} type="button" variant="secondary" onClick={onClose} className="rounded-xl" disabled={cancelDisabled}>
             Cancel
           </Button>
-          <Button type="button" onClick={onConfirm} className="rounded-xl border border-red-300 bg-white text-red-600 hover:bg-red-50 focus-visible:ring-red-300" disabled={confirmDisabled}>
+          <Button
+            type="button"
+            onClick={onConfirm}
+            className={`rounded-xl border ${toneConfig.border} bg-[var(--app-surface)] ${toneConfig.text} hover:${toneConfig.bg} focus-visible:${toneConfig.ring}`}
+            disabled={confirmDisabled}
+          >
             {resolvedConfirmIcon}
             {confirmLabel}
           </Button>
         </div>
       </div>
     </div>
+  );
+}
+
+function MailIconFallback() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 7l9 6 9-6" />
+    </svg>
   );
 }

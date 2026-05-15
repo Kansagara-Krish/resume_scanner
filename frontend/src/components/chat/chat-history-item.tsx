@@ -91,7 +91,7 @@ export function ChatHistoryItem({
               onStartEdit(id, title);
             }
           }}
-          className={`rounded-md p-1 ${active ? 'hover:bg-white/15' : 'hover:bg-[var(--app-surface-soft)]'}`}
+          className={`rounded-md p-1 ${active ? 'hover:bg-[rgba(255,255,255,0.08)]' : 'hover:bg-[var(--app-surface-soft)]'}`}
           aria-label="Rename chat"
         >
           <Pencil className="h-3.5 w-3.5" />
@@ -109,7 +109,7 @@ export function ChatHistoryItem({
               onDelete(id);
             }
           }}
-          className={`rounded-md p-1 ${active ? 'hover:bg-white/15' : 'hover:bg-[var(--app-surface-soft)]'}`}
+          className={`rounded-md p-1 ${active ? 'hover:bg-[rgba(255,255,255,0.08)]' : 'hover:bg-[var(--app-surface-soft)]'}`}
           aria-label="Delete chat"
         >
           <Trash2 className="h-3.5 w-3.5" />

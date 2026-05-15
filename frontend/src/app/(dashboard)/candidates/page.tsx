@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { MapPin, Search, Trash2, UserRound } from 'lucide-react';
-import { useCandidates, useDeleteCandidate, useJobs } from '@/lib/hooks';
+import { useBulkDeleteCandidates, useCandidates, useDeleteCandidate, useJobs } from '@/lib/hooks';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,8 +16,10 @@ export default function CandidatesPage() {
   const [selectedRoleId, setSelectedRoleId] = useState('');
   const [activeTab, setActiveTab] = useState<'shortlisted' | 'all'>('shortlisted');
   const [pendingDeleteCandidate, setPendingDeleteCandidate] = useState<{ id: string; name: string } | null>(null);
+  const [isBulkDeleteConfirming, setIsBulkDeleteConfirming] = useState(false);
   const { data: roles = [] } = useJobs();
   const deleteCandidateMutation = useDeleteCandidate();
+  const bulkDeleteMutation = useBulkDeleteCandidates();
   const { data: candidates = [], isLoading, error } = useCandidates({
     roleId: selectedRoleId || undefined,
     shortlisted: activeTab === 'shortlisted',
@@ -67,12 +69,41 @@ export default function CandidatesPage() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    try {
+      await bulkDeleteMutation.mutateAsync();
+      showToast({
+        message: 'All candidates deleted successfully',
+        tone: 'success',
+      });
+      setIsBulkDeleteConfirming(false);
+    } catch (bulkError) {
+      showToast({
+        message: bulkError instanceof Error ? bulkError.message : 'Failed to delete candidates',
+        tone: 'error',
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl">Candidates</CardTitle>
-          <CardDescription>Shortlisted candidates workspace for final hiring decisions.</CardDescription>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-3xl">Candidates</CardTitle>
+            <CardDescription>Shortlisted candidates workspace for final hiring decisions.</CardDescription>
+          </div>
+          {activeTab === 'all' && filteredCandidates.length > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsBulkDeleteConfirming(true)}
+              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete All
+            </Button>
+          )}
         </CardHeader>
         <CardContent>
           <div className="mb-3 inline-flex rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-soft)] p-1">
@@ -249,6 +280,46 @@ export default function CandidatesPage() {
               >
                 <Trash2 className="h-4 w-4" />
                 {deleteCandidateMutation.isPending ? 'Deleting...' : 'Delete'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {isBulkDeleteConfirming ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/35 px-4 backdrop-blur-sm"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setIsBulkDeleteConfirming(false);
+            }
+          }}
+          role="presentation"
+        >
+          <div className="w-full max-w-md rounded-2xl border border-[var(--app-border)] bg-white p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-red-600">Delete All Candidates?</h3>
+            <p className="mt-2 text-sm text-[var(--app-muted)]">
+              This will permanently delete ALL candidates in your workspace. This action cannot be undone. Are you sure?
+            </p>
+
+            <div className="mt-6 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => {
+                  setIsBulkDeleteConfirming(false);
+                }}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                onClick={handleBulkDelete}
+                disabled={bulkDeleteMutation.isPending}
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                {bulkDeleteMutation.isPending ? 'Deleting...' : 'Yes, Delete All'}
               </Button>
             </div>
           </div>

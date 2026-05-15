@@ -7,9 +7,10 @@ interface SkillLevelCardProps {
   value: SkillLevel;
   onChange: (skillName: string, level: SkillLevel) => void;
   onRequestDelete?: (skillName: string) => void;
+  highlighted?: boolean;
 }
 
-export function SkillLevelCard({ skillName, value, onChange, onRequestDelete }: SkillLevelCardProps) {
+export function SkillLevelCard({ skillName, value, onChange, onRequestDelete, highlighted }: SkillLevelCardProps) {
   const isSelected = value > 0;
   const displaySkillName = skillName
     .split(' ')
@@ -30,7 +31,7 @@ export function SkillLevelCard({ skillName, value, onChange, onRequestDelete }: 
         isSelected
           ? 'border-blue-500 bg-[var(--app-brand-soft)]'
           : 'border-[var(--app-border)] bg-[var(--app-surface-elevated)]'
-      }`}
+      } ${highlighted ? 'border-blue-500 shadow-[0_0_0_4px_rgba(59,130,246,0.12)] scale-[1.01]' : ''}`}
     >
       <p className="text-sm font-semibold text-[var(--app-text)]">{displaySkillName}</p>
       <select

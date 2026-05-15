@@ -1,0 +1,150 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider             = "prisma-client-py"
+  recursive_type_depth = 5
+  output               = "../app/db/prisma"
+}
+
+model User {
+  id         String    @id @default(uuid())
+  email      String    @unique
+  full_name  String?
+  avatar_url String?
+  google_id  String?   @unique
+  created_at DateTime  @default(now())
+  chats      Chat[]
+  skills     Skill[]
+  resumes    Resume[]
+  job_roles  JobRole[]
+}
+
+model Skill {
+  id         String       @id @default(uuid())
+  name       String       @unique
+  category   String?
+  created_by String?
+  is_global  Boolean      @default(true)
+  created_at DateTime     @default(now())
+  user       User?        @relation(fields: [created_by], references: [id])
+  aliases    SkillAlias[]
+  job_skills JobSkill[]
+}
+
+model SkillAlias {
+  id         String   @id @default(uuid())
+  alias      String   @unique
+  skill_id   String
+  created_at DateTime @default(now())
+  skill      Skill    @relation(fields: [skill_id], references: [id])
+}
+
+model JobRole {
+  id                      String     @id @default(uuid())
+  title                   String
+  description             String?
+  auto_select_enabled     Boolean    @default(false)
+  auto_select_threshold   Int        @default(70)
+  require_hr_confirmation Boolean    @default(true)
+  created_by              String?
+  created_at              DateTime   @default(now())
+  user                    User?      @relation(fields: [created_by], references: [id])
+  skills                  JobSkill[]
+  analyses                Analysis[]
+}
+
+model JobSkill {
+  id       String  @id @default(uuid())
+  job_id   String
+  skill_id String
+  level    String  @default("intermediate") // beginner, intermediate, expert
+  job      JobRole @relation(fields: [job_id], references: [id])
+  skill    Skill   @relation(fields: [skill_id], references: [id])
+}
+
+model Resume {
+  id               String                @id @default(uuid())
+  file_name        String
+  parsed_data      Json?
+  content_text     String
+  uploaded_by      String
+  auto_selected    Boolean               @default(false)
+  selected         Boolean               @default(false)
+  selection_status String                @default("rejected")
+  is_deleted       Boolean               @default(false)
+  created_at       DateTime              @default(now())
+  user             User                  @relation(fields: [uploaded_by], references: [id])
+  analyses         Analysis[]
+  enrichments      CandidateEnrichment[]
+}
+
+model CandidateEnrichment {
+  id                  String   @id @default(uuid())
+  candidate_id        String
+  linkedin_url        String?
+  profile_text        String?
+  communication_score Float
+  domain_score        Float
+  learning_score      Float
+  stability_score     Float
+  created_at          DateTime @default(now())
+  candidate           Resume   @relation(fields: [candidate_id], references: [id])
+
+  @@index([candidate_id])
+}
+
+model Analysis {
+  id                        String   @id @default(uuid())
+  job_id                    String
+  resume_id                 String
+  score                     Float
+  cgpa                      Float?
+  cgpa_or_percentage        Float?
+  percentage                Float?
+  education_degree          String?
+  degree_relevance          Float    @default(0)
+  total_experience_years    Float?
+  relevant_experience_years Float?
+  required_experience_years Float    @default(1)
+  matched_skill_count       Int      @default(0)
+  required_skill_count      Int      @default(0)
+  projects_count            Int      @default(0)
+  communication_score       Float    @default(0)
+  leadership_score          Float    @default(0)
+  teamwork_score            Float    @default(0)
+  problem_solving_score     Float    @default(0)
+  academic_score            Float    @default(0)
+  experience_score          Float    @default(0)
+  skill_match_score         Float    @default(0)
+  project_score             Float    @default(0)
+  soft_skill_score          Float    @default(0)
+  final_score               Float    @default(0)
+  soft_skills               Json?
+  normalized_skills         Json?
+  matched_skills            Json?
+  missing_skills            Json?
+  created_at                DateTime @default(now())
+  job                       JobRole  @relation(fields: [job_id], references: [id])
+  resume                    Resume   @relation(fields: [resume_id], references: [id])
+}
+
+model Chat {
+  id         String        @id @default(uuid())
+  user_id    String
+  title      String
+  created_at DateTime      @default(now())
+  user       User          @relation(fields: [user_id], references: [id])
+  messages   ChatMessage[]
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  chat_id    String
+  role       String   @default("user") // user, assistant
+  content    String
+  created_at DateTime @default(now())
+  chat       Chat     @relation(fields: [chat_id], references: [id])
+}

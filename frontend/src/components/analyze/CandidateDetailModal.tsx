@@ -327,13 +327,13 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
                 candidate.top_skills.map((skill) => (
                   <span
                     key={skill}
-                    className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700"
+                    className="rounded-full bg-[var(--app-surface-soft)] px-2.5 py-1 text-xs font-medium text-[var(--app-muted)]"
                   >
                     {skill}
                   </span>
                 ))
               ) : (
-                <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
+                <span className="rounded-full bg-[var(--app-surface-soft)] px-2.5 py-1 text-xs font-medium text-[var(--app-muted)]">
                   No top skills found
                 </span>
               )}
@@ -352,7 +352,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
 
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
           <div className="flex flex-col gap-6 lg:w-2/3">
-            <section className="rounded-xl border border-[var(--app-border)] bg-white p-6 shadow-sm">
+            <section className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-6 shadow-sm">
               <h3 className="mb-4 text-xl font-semibold text-[var(--app-text)]">Skill Competency Matrix</h3>
               <div className="space-y-4">
                 {competencyRows.length > 0 ? (
@@ -362,7 +362,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
                         <span className="font-medium uppercase tracking-wide text-[var(--app-text)]">{item.skill}</span>
                         <span className="font-semibold text-[var(--app-muted)]">{(item as any).is_na ? 'N/A' : `${Math.round(item.percentage)}%`}</span>
                       </div>
-                      <div className="h-2.5 rounded-full bg-slate-200">
+                      <div className="h-2.5 rounded-full bg-[var(--app-surface-soft)]">
                         <div className={`h-2.5 rounded-full ${getBarColor(item.percentage)} ${getBarWidthClass(item.percentage)}`} />
                       </div>
                     </div>
@@ -373,9 +373,9 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
               </div>
             </section>
 
-            <section className="w-full rounded-xl bg-white p-6 shadow-sm">
+            <section className="w-full rounded-xl bg-[var(--app-surface-elevated)] p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-[var(--app-text)]">Experience</h3>
-              <div className="mt-4 rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3">
+              <div className="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Total Experience</p>
                 <p className="mt-1 text-lg font-bold text-emerald-800">
                   {profile?.total_experience_years !== null && profile?.total_experience_years !== undefined
@@ -386,10 +386,10 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
 
               <div className="mt-4">
                 {profile?.experience_list && profile.experience_list.length > 0 ? (
-                  <ul className="relative ml-3 border-l border-slate-200 pl-5">
+                  <ul className="relative ml-3 border-l border-[var(--app-border)] pl-5">
                     {profile.experience_list.map((item, idx) => (
                       <li key={`${item.role || 'role'}-${idx}`} className="mb-4 last:mb-0">
-                        <span className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full border border-slate-300 bg-white" />
+                        <span className="absolute -left-[7px] mt-1 h-3 w-3 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-elevated)]" />
                         <p className="font-semibold text-[var(--app-text)]">{item.role || 'Role not specified'}</p>
                         <p className="text-sm text-[var(--app-muted)]">{item.duration || 'Duration not specified'}</p>
                       </li>
@@ -401,7 +401,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
               </div>
             </section>
 
-            <section className="rounded-xl border border-[var(--app-border)] bg-white p-6 shadow-sm">
+            <section className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-[var(--app-text)]">Education</h3>
               <div className="mt-4 space-y-2">
                 {filteredDegrees.length > 0 ? (
@@ -410,7 +410,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
                       key={`${item.degree || 'degree'}-${idx}`}
                       type="button"
                       onClick={() => setActiveEducationIndex((prev) => (prev === idx ? null : idx))}
-                      className="w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-left transition hover:bg-white"
+                      className="w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface)] px-4 py-3 text-left transition hover:bg-[var(--app-surface-soft)]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -436,7 +436,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
               </div>
             </section>
 
-            <section className="rounded-xl border border-[var(--app-border)] bg-white p-6 shadow-sm">
+            <section className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-[var(--app-text)]">Projects</h3>
               <div className="mt-4">
                 {cleanedProjects.length > 0 ? (
@@ -453,7 +453,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
               </div>
             </section>
 
-            <section className="rounded-xl border border-[var(--app-border)] bg-white p-6 shadow-sm">
+            <section className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-[var(--app-text)]">Certifications</h3>
               <div className="mt-4">
                 {cleanedCertifications.length > 0 ? (
@@ -470,7 +470,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
               </div>
             </section>
 
-            <section className="rounded-xl border border-[var(--app-border)] bg-white p-6 shadow-sm">
+            <section className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-6 shadow-sm">
               <h3 className="text-xl font-semibold text-[var(--app-text)]">Awards</h3>
               <div className="mt-4">
                 {cleanedAwards.length > 0 ? (
@@ -489,13 +489,13 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
           </div>
 
           <aside className="lg:w-1/3 lg:sticky lg:top-6">
-            <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
-              <div className="mb-4 rounded-xl border border-emerald-100 bg-emerald-50 p-4 text-center">
+            <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-5 shadow-sm">
+              <div className="mb-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-center">
                 <p className="text-xs font-semibold uppercase tracking-wide text-emerald-700">Match Score</p>
                 <p className="mt-1 text-3xl font-bold text-emerald-800">{scoreText}</p>
               </div>
 
-              <h3 className="mb-3 text-lg font-semibold text-gray-800">Role Requirement Match</h3>
+              <h3 className="mb-3 text-lg font-semibold text-[var(--app-text)]">Role Requirement Match</h3>
               <div className="max-h-[340px] space-y-2 overflow-y-auto pr-1">
                 {requirementRows.length > 0 ? (
                   requirementRows.map((item) => (
@@ -503,25 +503,25 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
                       key={`${item.skill}-${item.status}`}
                       className={`flex items-center justify-between rounded-lg px-3 py-1.5 transition-colors ${
                         item.status === 'Matched'
-                          ? 'border border-green-100 bg-green-50 text-green-700 hover:bg-green-100/60'
-                          : 'border border-gray-200 bg-gray-50 text-gray-500 hover:bg-gray-100'
+                            ? 'border border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100'
+                          : 'border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-muted)] hover:bg-[rgba(255,255,255,0.04)]'
                       }`}
                     >
                       <span className="flex items-center gap-2">
                         {item.status === 'Matched' ? (
-                          <CheckCircle2 className="h-4 w-4 text-green-600" />
+                          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                         ) : (
-                          <XCircle className="h-4 w-4 text-gray-400" />
+                          <XCircle className="h-4 w-4 text-[var(--app-muted)]" />
                         )}
                         <span className="text-sm leading-4">{item.skill}</span>
                       </span>
-                      <span className={`text-sm font-medium ${item.status === 'Matched' ? 'text-green-700' : 'text-gray-500'}`}>
+                      <span className={`text-sm font-medium ${item.status === 'Matched' ? 'text-emerald-700' : 'text-[var(--app-muted)]'}`}>
                         {item.status}
                       </span>
                     </div>
                   ))
                 ) : (
-                  <p className="text-sm text-gray-500">No requirement data available.</p>
+                  <p className="text-sm text-[var(--app-muted)]">No requirement data available.</p>
                 )}
               </div>
 
@@ -529,7 +529,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
                 <Button
                   type="button"
                   onClick={handleExportPdf}
-                  className="border border-gray-200 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  className="border border-[var(--app-border)] bg-[var(--app-surface-soft)] text-[var(--app-text)] hover:bg-[rgba(255,255,255,0.06)]"
                 >
                   <Download className="mr-2 h-4 w-4" />
                   Export PDF
@@ -544,7 +544,7 @@ export function CandidateDetailModal({ candidate, isOpen, onClose, role }: Candi
                 </Button>
               </div>
 
-              {shareFeedback ? <p className="mt-3 text-right text-xs text-gray-500">{shareFeedback}</p> : null}
+              {shareFeedback ? <p className="mt-3 text-right text-xs text-[var(--app-muted)]">{shareFeedback}</p> : null}
             </div>
           </aside>
         </div>

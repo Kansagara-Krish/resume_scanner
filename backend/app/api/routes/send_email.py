@@ -17,6 +17,10 @@ async def send_email(
 
     job_role = str(payload.get("job_role") or "Interview Process").strip() or "Interview Process"
     template = str(payload.get("template") or "Interview Invitation").strip() or "Interview Invitation"
+    interview_datetime = str(payload.get("interview_datetime") or "").strip()
+
+    if not interview_datetime:
+        raise HTTPException(status_code=400, detail="interview_datetime is required")
 
     unique_emails = list(dict.fromkeys(candidate_emails))
 
@@ -28,6 +32,7 @@ async def send_email(
             full_name=None,
             role_title=job_role,
             selection_type="final_select",
+            interview_datetime=interview_datetime,
         )
         if ok:
             sent_count += 1
@@ -38,6 +43,8 @@ async def send_email(
         "status": "ok",
         "requested_by": current_user.id,
         "template": template,
+        "message": f"Interview emails sent successfully for {job_role}. HR has been notified for {sent_count} candidate{'s' if sent_count != 1 else ''}.",
+        "interview_datetime": interview_datetime,
         "sent_count": sent_count,
         "failed_count": len(failed_emails),
         "failed_emails": failed_emails,

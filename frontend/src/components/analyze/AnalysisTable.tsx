@@ -60,17 +60,17 @@ export function AnalysisTable({
   };
 
   return (
-    <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+    <section className="mt-6 rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-5 shadow-sm">
       <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="font-display text-xl font-semibold text-gray-900">Recent Analysis Reports</h2>
+          <h2 className="font-display text-xl font-semibold text-[var(--app-text)]">Recent Analysis Reports</h2>
         </div>
         <div className="flex items-center gap-2">
           <Button
             type="button"
             variant="secondary"
             onClick={handleDownload}
-            className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+            className="border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] hover:bg-[var(--app-surface-soft)]"
           >
             Download Candidates
           </Button>
@@ -80,9 +80,9 @@ export function AnalysisTable({
         </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-gray-200">
-        <table className="min-w-full text-sm text-gray-700">
-          <thead className="bg-gray-50 text-left text-xs uppercase tracking-wide text-gray-600">
+      <div className="overflow-x-auto rounded-xl border border-[var(--app-border)]">
+        <table className="min-w-full text-sm text-[var(--app-text)]">
+          <thead className="bg-[var(--app-surface-soft)] text-left text-xs uppercase tracking-wide text-[var(--app-muted)]">
             <tr>
               <th className="px-4 py-3 font-semibold">Rank</th>
               <th className="px-4 py-3 font-semibold">Candidate / Filename</th>
@@ -93,17 +93,17 @@ export function AnalysisTable({
               <th className="px-4 py-3 font-semibold">Final Selection</th>
             </tr>
           </thead>
-          <tbody className="bg-white">
+          <tbody className="bg-[var(--app-surface-elevated)]">
             {rows.map((row) => (
               <tr
                 key={row.id}
-                className={`border-b border-gray-200 transition-colors hover:bg-gray-50 ${
-                  selectedById[row.id] ? 'bg-blue-50' : row.rank <= 3 ? 'bg-blue-50/40' : ''
+                className={`border-b border-[var(--app-border)] transition-colors hover:bg-[var(--app-surface-soft)] ${
+                  selectedById[row.id] ? 'bg-[var(--app-surface-soft)]' : row.rank <= 3 ? 'bg-[var(--app-surface)]' : ''
                 }`}
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2">
-                    <span className="font-semibold text-gray-900">#{row.rank}</span>
+                    <span className="font-semibold text-[var(--app-text)]">#{row.rank}</span>
                     {row.rank <= 3 ? (
                       <AnalysisBadge tone="success" className="inline-flex shrink-0 items-center justify-center whitespace-nowrap px-2 py-1 text-xs leading-none">
                         Top {row.rank}
@@ -111,8 +111,8 @@ export function AnalysisTable({
                     ) : null}
                   </div>
                 </td>
-                <td className="px-4 py-3 font-medium text-gray-900">{row.filename}</td>
-                <td className="px-4 py-3 text-gray-700">{row.role}</td>
+                <td className="px-4 py-3 font-medium text-[var(--app-text)]">{row.filename}</td>
+                <td className="px-4 py-3 text-[var(--app-muted)]">{row.role}</td>
                 <td className="px-4 py-3">
                   <AnalysisBadge tone="green">{row.score}% Match</AnalysisBadge>
                 </td>
@@ -123,7 +123,7 @@ export function AnalysisTable({
                     className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                       shortlistedById[row.id]
                         ? 'border border-emerald-200 bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
-                        : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        : 'border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] hover:bg-[var(--app-surface-soft)]'
                     }`}
                   >
                     {shortlistedById[row.id] ? 'Saved for Review' : 'Save for Review'}
@@ -136,7 +136,7 @@ export function AnalysisTable({
                     className={`rounded-lg px-3 py-1.5 text-xs font-medium transition ${
                       selectedById[row.id]
                         ? 'bg-blue-600 text-white hover:bg-blue-700'
-                        : 'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+                        : 'border border-[var(--app-border)] bg-[var(--app-surface)] text-[var(--app-text)] hover:bg-[var(--app-surface-soft)]'
                     }`}
                   >
                     {selectedById[row.id] ? 'Selected' : 'Final Select'}
@@ -154,7 +154,7 @@ export function AnalysisTable({
 
             {rows.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-sm text-gray-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-sm text-[var(--app-muted)]">
                   No analysis reports for the selected job role.
                 </td>
               </tr>

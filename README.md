@@ -1,5 +1,7 @@
 # AI HR Copilot
 
+![Candidate Page](./frontend/public/assets/readme/screenshots/candidate-page.png)
+
 A production-ready AI-powered HR application with a ChatGPT-style interface for resume ranking and candidate comparison.
 
 ## Tech Stack
@@ -33,6 +35,8 @@ For instructions on how to use the application features like resume ranking, ana
 ---
 
 ### Quick Start (Abbreviated)
+
+⚡ **Note**: Ollama is now **automatically managed** by the backend! No manual setup needed—just start the backend server and Ollama will start/stop automatically.
 
 ### 1. Backend Setup (FastAPI)
 1.  **Open a terminal** and navigate to the `backend` folder:
@@ -104,21 +108,30 @@ docker-compose up --build
 
 ## Screenshots
 
+Store all screenshots in [frontend/public/assets/readme/screenshots](frontend/public/assets/readme/screenshots).
+
+Use these filenames:
+- [resume-scanner-banner.png](frontend/public/assets/readme/screenshots/resume-scanner-banner.png)
+- [login-page.png](frontend/public/assets/readme/screenshots/login-page.png)
+- [dashboard.png](frontend/public/assets/readme/screenshots/dashboard.png)
+- [job-roles.png](frontend/public/assets/readme/screenshots/job-roles.png)
+- [chatbase.png](frontend/public/assets/readme/screenshots/chatbase.png)
+
 ### Login Page
-![Login Page](public/screenshots/01-login-page.png)
+![Login Page](./frontend/public/assets/readme/screenshots/login-page.png)
 *User authentication page with Google OAuth and email/password login options.*
 
 ### Dashboard
-![Dashboard](public/screenshots/02-dashboard.png)
+![Dashboard](./frontend/public/assets/readme/screenshots/dashboard.png)
 *Main dashboard displaying overview statistics, recent candidates, and quick actions.*
 
-### Chatbase Page
-![Chatbase](public/screenshots/03-chatbase-page.png)
-*AI-powered chat interface for asking questions about candidates and job descriptions.*
+### Job Roles Page
+![Job Roles Page](./frontend/public/assets/readme/screenshots/job-roles.png)
+*Job role management page for creating and organizing roles and required skills.*
 
-### Analytics Page
-![Analytics](public/screenshots/04-analytics-page.png)
-*Detailed analytics and insights with candidate scoring breakdown and comparisons.*
+### Chatbase Page
+![Chatbase Page](./frontend/public/assets/readme/screenshots/chatbase.png)
+*AI-powered chat interface for asking questions about candidates and job descriptions.*
 
 ## API Documentation
 Once the backend is running, access the interactive docs at:

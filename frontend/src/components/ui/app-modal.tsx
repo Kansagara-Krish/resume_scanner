@@ -45,7 +45,7 @@ export function AppModal({ isOpen, onClose, title, children }: AppModalProps) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
+      className="fixed inset-0 bg-black/45 backdrop-blur-sm flex items-center justify-center z-50"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) {
           onClose();
@@ -54,7 +54,7 @@ export function AppModal({ isOpen, onClose, title, children }: AppModalProps) {
       role="presentation"
     >
       <div
-        className={`bg-white rounded-2xl shadow-xl w-[500px] max-h-[90vh] overflow-y-auto p-6 transform transition-all duration-200 ${
+        className={`rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] shadow-xl w-[500px] max-h-[90vh] overflow-y-auto p-6 transform transition-all duration-200 ${
           animateIn ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
         role="dialog"
@@ -62,11 +62,11 @@ export function AppModal({ isOpen, onClose, title, children }: AppModalProps) {
         aria-label={title}
       >
         <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
+          <h2 className="text-xl font-semibold text-[var(--app-text)]">{title}</h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1 text-gray-500 transition hover:bg-gray-100 hover:text-gray-700"
+            className="rounded-md p-1 text-[var(--app-muted)] transition hover:bg-[var(--app-surface-soft)] hover:text-[var(--app-text)]"
             aria-label="Close modal"
           >
             <X className="h-5 w-5" />

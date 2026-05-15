@@ -68,7 +68,7 @@ export function UploadedFileList({
         {previewFiles.map((file, index) => (
           <span
             key={`${file.name}-${file.size}-${index}`}
-            className="inline-flex items-center gap-1 rounded-full border border-[var(--app-border)] bg-white px-3 py-1 text-xs font-medium text-[var(--app-text)]"
+            className="inline-flex items-center gap-1 rounded-full border border-[var(--app-border)] bg-[var(--app-surface-elevated)] px-3 py-1 text-xs font-medium text-[var(--app-text)]"
           >
             {file.name}
             <button
@@ -86,14 +86,14 @@ export function UploadedFileList({
           <button
             type="button"
             onClick={() => setIsExpanded(true)}
-            className="rounded-full border border-[var(--app-border)] bg-white px-3 py-1 text-xs font-semibold text-[var(--app-brand)] hover:bg-[var(--app-surface)]"
+            className="rounded-full border border-[var(--app-border)] bg-[var(--app-surface-elevated)] px-3 py-1 text-xs font-semibold text-[var(--app-brand)] hover:bg-[var(--app-surface)]"
           >
             +{hiddenCount} more
           </button>
         ) : null}
       </div>
 
-      <div className="mt-4 rounded-lg border border-[var(--app-border)] bg-white p-3">
+      <div className="mt-4 rounded-lg border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-3">
         <p className="text-xs font-medium text-[var(--app-muted)]">{statusText}</p>
         <progress className="mt-2 h-2 w-full" max={progressMax} value={progressValue} aria-label="Upload progress" />
 
@@ -114,7 +114,7 @@ export function UploadedFileList({
           }}
           role="presentation"
         >
-          <section className="w-full max-w-2xl rounded-2xl border border-[var(--app-border)] bg-white p-5 shadow-xl">
+          <section className="w-full max-w-2xl rounded-2xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-5 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-semibold text-[var(--app-text)]">Uploaded files ({files.length})</h3>
               <button

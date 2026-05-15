@@ -2,8 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.db.prisma_client import Prisma
 from app.db.session import get_db
 from app.api.dependencies import get_current_user
-from app.schemas.api import JobRoleCreate, JobRoleDetail, JobRoleUpdate
+from app.schemas.api import JobRoleCreate, JobRoleDetail, JobRoleUpdate, SuggestSkillsRequest
+from app.services.nlp_service import NLPService
 from typing import List
+import logging
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -209,6 +213,51 @@ def get_or_create_skill_id(skill_data, current_user, db: Prisma):
 
     return _resolve()
 
+# === SUGGEST SKILLS ROUTE (must be first POST route) ===
+@router.post("/suggest-skills", response_model=List[str])
+async def suggest_skills_for_role(
+    payload: SuggestSkillsRequest,
+    current_user=Depends(get_current_user),
+    db: Prisma = Depends(get_db),
+):
+    """Suggest skills for a job role using AI."""
+    logger.info(f"Received payload: role_title={payload.role_title!r}, role_description={payload.role_description!r}")
+    
+    role_title = payload.role_title.strip()
+    role_description = (payload.role_description or "").strip()
+    
+    if not role_title:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Role title is required"
+        )
+    
+    try:
+        nlp_service = NLPService()
+        logger.info(f"Calling NLPService.suggest_skills_for_role for: {role_title}")
+        suggestions = await nlp_service.suggest_skills_for_role(role_title, role_description)
+        
+        logger.info(f"Received suggestions: {suggestions}")
+        
+        if not suggestions:
+            logger.error(f"NLPService returned empty suggestions for role: {role_title}")
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="AI service could not generate skill suggestions. Please check backend logs and ensure the API key is configured correctly."
+            )
+        
+        logger.info(f"Successfully generated {len(suggestions)} skills for {role_title}")
+        return suggestions
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Exception in suggest_skills_for_role: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to suggest skills: {str(e)}"
+        )
+
+# === OTHER ROUTES ===
 @router.get("/", response_model=List[JobRoleDetail])
 async def get_jobs(current_user = Depends(get_current_user), db: Prisma = Depends(get_db)):
     jobs = await db.jobrole.find_many(
@@ -377,6 +426,5 @@ async def delete_job(job_id: str, current_user = Depends(get_current_user), db: 
         raise HTTPException(status_code=404, detail="Job not found")
 
     await db.analysis.delete_many(where={"job_id": job_id})
-    await db.shortlistedcandidate.delete_many(where={"job_id": job_id})
     await db.jobskill.delete_many(where={"job_id": job_id})
     await db.jobrole.delete(where={"id": job_id})

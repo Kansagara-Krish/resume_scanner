@@ -92,7 +92,7 @@ export function ProfileModalContent({ onClose }: ProfileModalContentProps) {
 
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-4 shadow-sm">
         <div className="flex items-center gap-3">
           <Avatar className="h-14 w-14">
             {user?.avatar_url ? (
@@ -102,28 +102,28 @@ export function ProfileModalContent({ onClose }: ProfileModalContentProps) {
             )}
           </Avatar>
           <div className="min-w-0">
-            <p className="truncate text-base font-semibold text-gray-900">{name || 'Name unavailable'}</p>
-            <p className="truncate text-sm text-gray-600">{user?.email || 'Email unavailable'}</p>
+            <p className="truncate text-base font-semibold text-[var(--app-text)]">{name || 'Name unavailable'}</p>
+            <p className="truncate text-sm text-[var(--app-muted)]">{user?.email || 'Email unavailable'}</p>
           </div>
         </div>
       </div>
 
-      <form onSubmit={handleSave} className="rounded-xl border border-gray-200 bg-gray-50 p-4 space-y-3">
-        <p className="text-xs uppercase tracking-wide text-gray-500">Account</p>
+      <form onSubmit={handleSave} className="rounded-xl border border-[var(--app-border)] bg-[var(--app-surface)] p-4 space-y-3">
+        <p className="text-xs uppercase tracking-wide text-[var(--app-muted)]">Account</p>
         <div className="space-y-2">
-          <label htmlFor="profile-name" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="profile-name" className="block text-sm font-medium text-[var(--app-text)]">
             Name
           </label>
           <input
             id="profile-name"
             value={name}
             onChange={(event) => setName(event.target.value)}
-            className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 text-sm text-gray-800"
+            className="h-10 w-full rounded-md border border-[var(--app-border)] bg-[var(--app-surface-elevated)] px-3 text-sm text-[var(--app-text)]"
             placeholder="Enter your name"
           />
         </div>
         <div className="space-y-2">
-          <label htmlFor="profile-email" className="block text-sm font-medium text-gray-700">
+          <label htmlFor="profile-email" className="block text-sm font-medium text-[var(--app-text)]">
             Email
           </label>
           <input
@@ -131,15 +131,15 @@ export function ProfileModalContent({ onClose }: ProfileModalContentProps) {
             type="email"
             value={user?.email || ''}
             readOnly
-            className="h-10 w-full cursor-not-allowed rounded-md border border-gray-300 bg-gray-100 px-3 text-sm text-gray-600"
+            className="h-10 w-full cursor-not-allowed rounded-md border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-3 text-sm text-[var(--app-muted)]"
           />
         </div>
-        <div className="rounded-md border border-gray-200 bg-white p-3">
-          <p className="text-xs uppercase tracking-wide text-gray-500">User ID</p>
-          <p className="mt-1 break-all text-sm text-gray-700">{user?.id || 'Unavailable'}</p>
+        <div className="rounded-md border border-[var(--app-border)] bg-[var(--app-surface-elevated)] p-3">
+          <p className="text-xs uppercase tracking-wide text-[var(--app-muted)]">User ID</p>
+          <p className="mt-1 break-all text-sm text-[var(--app-text)]">{user?.id || 'Unavailable'}</p>
         </div>
 
-        {status ? <p className="text-sm text-gray-600">{status}</p> : null}
+        {status ? <p className="text-sm text-[var(--app-muted)]">{status}</p> : null}
 
         <div className="flex items-center justify-between gap-2 pt-1">
           <Button type="button" variant="destructive" onClick={handleDeleteAccount}>

@@ -14,9 +14,9 @@ type CandidateCardProps = {
 };
 
 const toneByRank: Record<number, string> = {
-  1: 'bg-emerald-50 border-emerald-200',
-  2: 'bg-blue-50 border-blue-200',
-  3: 'bg-violet-50 border-violet-200',
+  1: 'bg-[var(--app-surface-elevated)] border-emerald-400/40',
+  2: 'bg-[var(--app-surface-elevated)] border-sky-400/35',
+  3: 'bg-[var(--app-surface-elevated)] border-violet-400/35',
 };
 
 export function CandidateCard({
@@ -30,7 +30,7 @@ export function CandidateCard({
   onDelete,
 }: CandidateCardProps) {
   const cardTone = autoSelected
-    ? 'bg-emerald-50 border-emerald-300'
+    ? 'bg-[var(--app-surface-elevated)] border-emerald-400/50'
     : toneByRank[rank] || 'bg-[var(--app-surface-elevated)] border-[var(--app-border)]';
   const skillText = topSkills.slice(0, 3).join(', ');
   const hasDelete = typeof onDelete === 'function';
@@ -43,14 +43,14 @@ export function CandidateCard({
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <span className="rounded-full bg-white/80 px-2.5 py-1 text-xs font-semibold tracking-wide text-[var(--app-text)]">Top {rank}</span>
+          <span className="rounded-full border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-2.5 py-1 text-xs font-semibold tracking-wide text-[var(--app-text)]">Top {rank}</span>
           {autoSelected ? (
-            <span className="rounded-full border border-emerald-300 bg-emerald-100 px-2.5 py-1 text-xs font-semibold tracking-wide text-emerald-700">
+            <span className="rounded-full border border-emerald-400/40 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold tracking-wide text-emerald-200">
               Auto Selected
             </span>
           ) : null}
         </div>
-        <span className="rounded-full bg-white/90 px-2.5 py-1 text-sm font-semibold text-[var(--app-text)]">{Math.round(score)}%</span>
+        <span className="rounded-full border border-[var(--app-border)] bg-[var(--app-surface-soft)] px-2.5 py-1 text-sm font-semibold text-[var(--app-text)]">{Math.round(score)}%</span>
       </div>
 
       <h3 className="text-left font-display text-[1.72rem] font-semibold leading-tight text-[var(--app-text)] sm:text-[1.78rem]" title={name}>
@@ -72,7 +72,7 @@ export function CandidateCard({
             type="button"
             size="sm"
             variant="outline"
-            className="w-full border-red-300 text-red-600 hover:bg-red-50"
+            className="w-full border-red-400/40 text-red-300 hover:bg-red-400/10"
             onClick={onDelete}
           >
             Delete

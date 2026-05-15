@@ -22,6 +22,26 @@ type CandidateFilters = {
   shortlisted?: boolean;
 };
 
+export type ResumeProcessingStatus = 'uploaded' | 'processing' | 'analyzed' | 'failed';
+
+export type ResumeStatusResponse = {
+  resume_id: string;
+  status: ResumeProcessingStatus;
+  stage?: string | null;
+  error_message?: string | null;
+  processing_started_at?: string | null;
+  processing_completed_at?: string | null;
+};
+
+export type ResumeResultResponse = {
+  resume_id: string;
+  status: ResumeProcessingStatus;
+  stage?: string | null;
+  candidate_score?: number | null;
+  parsed_data?: Record<string, unknown>;
+  error_message?: string | null;
+};
+
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 const getApiClient = () => {
@@ -68,8 +88,28 @@ const getErrorMessage = (error: unknown): string => {
     return fallback;
   }
 
-  const axiosError = error as AxiosError<{ detail?: string }>;
-  return axiosError.response?.data?.detail || axiosError.message || fallback;
+  const axiosError = error as AxiosError<any>;
+  
+  // Handle FastAPI validation errors (422 responses)
+  if (axiosError.response?.data?.detail) {
+    // If detail is an array (validation errors), format it
+    if (Array.isArray(axiosError.response.data.detail)) {
+      const errors = axiosError.response.data.detail
+        .map((err: any) => {
+          if (typeof err === 'string') return err;
+          if (err.msg) return `${err.loc?.join('.') || 'Field'}: ${err.msg}`;
+          return JSON.stringify(err);
+        })
+        .join('; ');
+      return errors || fallback;
+    }
+    // If detail is a string, return it directly
+    if (typeof axiosError.response.data.detail === 'string') {
+      return axiosError.response.data.detail;
+    }
+  }
+  
+  return axiosError.message || fallback;
 };
 
 export const googleLogin = async (payload: GoogleLoginPayload): Promise<AuthResponse> => {
@@ -127,6 +167,58 @@ export const uploadResumes = async (
   } catch (error) {
     throw new Error(getErrorMessage(error));
   }
+};
+
+export const getResumeStatus = async (resumeId: string): Promise<ResumeStatusResponse> => {
+  const api = getApiClient();
+  const response = await api.get<ResumeStatusResponse>(`/api/resumes/status/${resumeId}`);
+  return response.data;
+};
+
+export const getResumeResult = async (resumeId: string): Promise<ResumeResultResponse> => {
+  const api = getApiClient();
+  const response = await api.get<ResumeResultResponse>(`/api/resumes/result/${resumeId}`);
+  return response.data;
+};
+
+export const waitForResumeProcessing = async (
+  resumeIds: string[],
+  options?: {
+    pollIntervalMs?: number;
+    timeoutMs?: number;
+    onUpdate?: (statuses: ResumeStatusResponse[]) => void;
+  }
+): Promise<{ analyzedIds: string[]; failedIds: string[]; statuses: ResumeStatusResponse[] }> => {
+  const ids = Array.from(new Set(resumeIds.filter((id) => id && id.trim().length > 0)));
+  if (ids.length === 0) {
+    return { analyzedIds: [], failedIds: [], statuses: [] };
+  }
+
+  const pollIntervalMs = Math.max(1000, options?.pollIntervalMs ?? 2500);
+  const timeoutMs = Math.max(30000, options?.timeoutMs ?? 10 * 60 * 1000);
+  const startedAt = Date.now();
+
+  let lastStatuses: ResumeStatusResponse[] = [];
+  while (Date.now() - startedAt < timeoutMs) {
+    const statuses = await Promise.all(ids.map((id) => getResumeStatus(id)));
+    lastStatuses = statuses;
+    options?.onUpdate?.(statuses);
+
+    const pending = statuses.filter((item) => item.status === 'uploaded' || item.status === 'processing');
+    if (pending.length === 0) {
+      const analyzedIds = statuses.filter((item) => item.status === 'analyzed').map((item) => item.resume_id);
+      const failedIds = statuses.filter((item) => item.status === 'failed').map((item) => item.resume_id);
+      return { analyzedIds, failedIds, statuses };
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, pollIntervalMs));
+  }
+
+  const analyzedIds = lastStatuses.filter((item) => item.status === 'analyzed').map((item) => item.resume_id);
+  const failedIds = lastStatuses
+    .filter((item) => item.status !== 'analyzed')
+    .map((item) => item.resume_id);
+  return { analyzedIds, failedIds, statuses: lastStatuses };
 };
 
 export const analyzeJobDescription = async (payload: AnalyzeRequest): Promise<AnalyzeResponse> => {
@@ -253,6 +345,16 @@ export const deleteCandidate = async (candidateId: string): Promise<{ message: s
   try {
     const api = getApiClient();
     const response = await api.delete<{ message: string }>(`/api/candidates/${candidateId}`);
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+};
+
+export const deleteCandidatesBulk = async (): Promise<{ message: string }> => {
+  try {
+    const api = getApiClient();
+    const response = await api.delete<{ message: string }>('/api/candidates/bulk/delete');
     return response.data;
   } catch (error) {
     throw new Error(getErrorMessage(error));
@@ -550,6 +652,19 @@ export const deleteJob = async (id: string): Promise<void> => {
   }
 };
 
+export const suggestSkillsForRole = async (roleTitle: string, roleDescription: string = ''): Promise<string[]> => {
+  try {
+    const api = getApiClient();
+    const response = await api.post<string[]>('/api/jobs/suggest-skills', {
+      role_title: roleTitle,
+      role_description: roleDescription,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error));
+  }
+};
+
 // Resumes API
 export const getResumes = async (): Promise<any[]> => {
   const api = getApiClient();
@@ -573,6 +688,25 @@ export const runAnalysis = async (jobId: string): Promise<any> => {
 export const runAnalysisForResumes = async (jobId: string, resumeIds: string[]): Promise<any[]> => {
   const api = getApiClient();
   const response = await api.post('/api/analysis/', { job_id: jobId, resume_ids: resumeIds });
+  return response.data;
+};
+
+// AI analysis management (controls Ollama runtime)
+export const getOllamaStatus = async (): Promise<{ running: boolean; managed: boolean }> => {
+  const api = getApiClient();
+  const response = await api.get('/api/ollama/status');
+  return response.data;
+};
+
+export const startOllama = async (): Promise<{ started: boolean }> => {
+  const api = getApiClient();
+  const response = await api.post('/api/ollama/start');
+  return response.data;
+};
+
+export const stopOllama = async (): Promise<{ stopped: boolean }> => {
+  const api = getApiClient();
+  const response = await api.post('/api/ollama/stop');
   return response.data;
 };
 
@@ -600,6 +734,7 @@ export const sendInterviewEmail = async (payload: {
   candidate_emails: string[];
   job_role: string;
   template: string;
+  interview_datetime: string;
 }): Promise<any> => {
   const api = getApiClient();
   const response = await api.post('/send-email', payload);
