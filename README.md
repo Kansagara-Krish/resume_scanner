@@ -1,6 +1,22 @@
 # AI HR Copilot
 
-![Candidate Page](./frontend/public/assets/readme/screenshots/candidate-page.png)
+## Screenshots
+
+| Candidate Page |
+| :---: |
+| ![Candidate Page](./frontend/public/assets/readme/screenshots/candidate-page.png) |
+
+### Login Page & Dashboard
+
+| Login Page | Dashboard |
+| :---: | :---: |
+| ![Login Page](./frontend/public/assets/readme/screenshots/login-page.png) | ![Dashboard](./frontend/public/assets/readme/screenshots/dashboard.png) |
+
+### Job Roles Page & Chatbase Page
+
+| Job Roles Page | Chatbase Page |
+| :---: | :---: |
+| ![Job Roles Page](./frontend/public/assets/readme/screenshots/job-roles.png) | ![Chatbase Page](./frontend/public/assets/readme/screenshots/chatbase.png) |
 
 A production-ready AI-powered HR application with a ChatGPT-style interface for resume ranking and candidate comparison.
 
@@ -105,33 +121,6 @@ docker-compose up --build
 - **Gmail Integration**: Automatically fetch new resumes from your inbox.
 - **Candidate Comparison**: Detailed side-by-side view with scoring breakdown.
 - **Google Drive Storage**: Secure cloud storage for all parsed resumes.
-
-## Screenshots
-
-Store all screenshots in [frontend/public/assets/readme/screenshots](frontend/public/assets/readme/screenshots).
-
-Use these filenames:
-- [resume-scanner-banner.png](frontend/public/assets/readme/screenshots/resume-scanner-banner.png)
-- [login-page.png](frontend/public/assets/readme/screenshots/login-page.png)
-- [dashboard.png](frontend/public/assets/readme/screenshots/dashboard.png)
-- [job-roles.png](frontend/public/assets/readme/screenshots/job-roles.png)
-- [chatbase.png](frontend/public/assets/readme/screenshots/chatbase.png)
-
-### Login Page
-![Login Page](./frontend/public/assets/readme/screenshots/login-page.png)
-*User authentication page with Google OAuth and email/password login options.*
-
-### Dashboard
-![Dashboard](./frontend/public/assets/readme/screenshots/dashboard.png)
-*Main dashboard displaying overview statistics, recent candidates, and quick actions.*
-
-### Job Roles Page
-![Job Roles Page](./frontend/public/assets/readme/screenshots/job-roles.png)
-*Job role management page for creating and organizing roles and required skills.*
-
-### Chatbase Page
-![Chatbase Page](./frontend/public/assets/readme/screenshots/chatbase.png)
-*AI-powered chat interface for asking questions about candidates and job descriptions.*
 
 ## API Documentation
 Once the backend is running, access the interactive docs at:
